@@ -42,7 +42,7 @@
                      Items="{Binding AutoSwitchProfiles}">
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="viewModels:AutoSwitchProfileViewModel">
-                        <TextBlock Text="{Binding ExeName}" />
+                        <TextBlock Text="{Binding DisplayName}" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

@@ -1,12 +1,11 @@
 using Sonar.AutoSwitch.Services;
-
 namespace Sonar.AutoSwitch.ViewModels;
 
 public class AutoSwitchProfileViewModel : ViewModelBase
 {
     private string _exeName = "MyGame";
+    private string _title = "";
     private SonarGamingConfiguration _sonarGamingConfiguration = new(null, "Unset");
-    private string _title;
 
     public string Title
     {
@@ -16,6 +15,7 @@ public class AutoSwitchProfileViewModel : ViewModelBase
             if (value == _title) return;
             _title = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(DisplayName)); // Notify that DisplayName has changed
         }
     }
 
@@ -27,6 +27,7 @@ public class AutoSwitchProfileViewModel : ViewModelBase
             if (value == _exeName) return;
             _exeName = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(DisplayName)); // Notify that DisplayName has changed
         }
     }
 
@@ -41,14 +42,16 @@ public class AutoSwitchProfileViewModel : ViewModelBase
         }
     }
 
-    public override string ToString()
-    {
-        return ExeName;
-    }
+    public string DisplayName => string.IsNullOrWhiteSpace(Title) ? ExeName : Title;
 
     protected override void OnPropertyChanged(string? propertyName = null)
     {
         base.OnPropertyChanged(propertyName);
         StateManager.Instance.SaveState<HomeViewModel>();
+    }
+
+    public override string ToString()
+    {
+        return $"Title: {Title}, ExeName: {ExeName}, SonarGamingConfiguration: {SonarGamingConfiguration}, DisplayName: {DisplayName}";
     }
 }
