@@ -1,4 +1,5 @@
 using Sonar.AutoSwitch.Services;
+using System.Runtime.CompilerServices;
 namespace Sonar.AutoSwitch.ViewModels;
 
 public class AutoSwitchProfileViewModel : ViewModelBase
@@ -44,7 +45,7 @@ public class AutoSwitchProfileViewModel : ViewModelBase
 
     public string DisplayName => string.IsNullOrWhiteSpace(Title) ? ExeName : Title;
 
-    protected override void OnPropertyChanged(string? propertyName = null)
+    protected override void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         base.OnPropertyChanged(propertyName);
         StateManager.Instance.SaveState<HomeViewModel>();
