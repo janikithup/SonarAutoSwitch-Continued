@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Sonar.AutoSwitch.ViewModels;
@@ -29,9 +30,20 @@ public class AutoSwitchService
             WindowEventManager.Instance.UnsubscribeToWindowsEvents();
     }
 
+    private static readonly string LogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Sonar.AutoSwitch", "debug.log");
+
+    private static void Log(string message)
+    {
+        try { File.AppendAllText(LogPath, $"{DateTime.Now:HH:mm:ss.fff} {message}\n"); } catch { }
+    }
+
     private async void InstanceOnForegroundWindowChanged(object? sender, WindowInfo e)
     {
         string? windowExeName = e.ExeName;
+        Log($"ForegroundChanged: exe={windowExeName} title={e.Title}");
+
         if (string.Equals(windowExeName, "explorer", StringComparison.OrdinalIgnoreCase))
             return;
 
@@ -55,17 +67,35 @@ public class AutoSwitchService
                     (string.IsNullOrEmpty(p.Title) || e.Title.Contains(p.Title, StringComparison.OrdinalIgnoreCase)));
             SonarGamingConfiguration? sonarGamingConfiguration = autoSwitchProfileViewModel?.SonarGamingConfiguration;
             sonarGamingConfiguration ??= _homeViewModel.DefaultSonarGamingConfiguration;
+            Log($"Matched profile: {autoSwitchProfileViewModel?.Title ?? "(none→default)"} → config={sonarGamingConfiguration?.Name} id={sonarGamingConfiguration?.Id}");
+
             if (string.IsNullOrEmpty(sonarGamingConfiguration.Id) ||
                 _selectedGamingConfiguration == sonarGamingConfiguration)
+            {
+                Log($"Early return: id empty={string.IsNullOrEmpty(sonarGamingConfiguration.Id)} sameConfig={_selectedGamingConfiguration == sonarGamingConfiguration}");
                 return;
+            }
 
-            string selectedGamingConfigurationId =
-                SteelSeriesSonarService.Instance.GetSelectedGamingConfiguration();
-            _selectedGamingConfiguration = sonarGamingConfiguration;
-            if (sonarGamingConfiguration.Id == selectedGamingConfigurationId)
-                return;
-            await SteelSeriesSonarService.Instance.ChangeSelectedGamingConfiguration(sonarGamingConfiguration,
-                _cancellationTokenSource.Token);
+            try
+            {
+                string selectedGamingConfigurationId =
+                    SteelSeriesSonarService.Instance.GetSelectedGamingConfiguration();
+                Log($"Current Sonar config: {selectedGamingConfigurationId}");
+                _selectedGamingConfiguration = sonarGamingConfiguration;
+                if (sonarGamingConfiguration.Id == selectedGamingConfigurationId)
+                {
+                    Log("Already on correct config, skipping");
+                    return;
+                }
+                Log($"Switching to {sonarGamingConfiguration.Name}...");
+                await SteelSeriesSonarService.Instance.ChangeSelectedGamingConfiguration(sonarGamingConfiguration,
+                    _cancellationTokenSource.Token);
+                Log("Switch complete");
+            }
+            catch (Exception ex)
+            {
+                Log($"ERROR: {ex.GetType().Name}: {ex.Message}");
+            }
         }
         finally
         {
