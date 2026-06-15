@@ -1,6 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# 
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sonar.AutoSwitch", "Sonar.AutoSwitch\Sonar.AutoSwitch.csproj", "{AEFBDC85-E7C1-4F6C-9C58-083586F4CFFF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sonar.AutoSwitch.Tests", "Sonar.AutoSwitch.Tests\Sonar.AutoSwitch.Tests.csproj", "{F29CFD6B-2A7A-45B6-9CB3-1E5574B0E8DE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,5 +15,9 @@ Global
 		{AEFBDC85-E7C1-4F6C-9C58-083586F4CFFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AEFBDC85-E7C1-4F6C-9C58-083586F4CFFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AEFBDC85-E7C1-4F6C-9C58-083586F4CFFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F29CFD6B-2A7A-45B6-9CB3-1E5574B0E8DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F29CFD6B-2A7A-45B6-9CB3-1E5574B0E8DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F29CFD6B-2A7A-45B6-9CB3-1E5574B0E8DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F29CFD6B-2A7A-45B6-9CB3-1E5574B0E8DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

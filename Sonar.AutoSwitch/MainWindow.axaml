@@ -10,8 +10,8 @@
         Title="Sonar Auto Switch">
     <ui:NavigationView SelectionChanged="NavigationView_OnSelectionChanged" PaneDisplayMode="LeftCompact">
         <ui:NavigationView.MenuItems>
-            <ui:NavigationViewItem Content="Home" IsSelected="True" Tag="Home" Icon="Home" />
-            <ui:NavigationViewItem Content="About" Tag="About" Icon="Help" />
+            <ui:NavigationViewItem Content="Home" IsSelected="True" Tag="Home" IconSource="Home" />
+            <ui:NavigationViewItem Content="About" Tag="About" IconSource="Help" />
         </ui:NavigationView.MenuItems>
         <ScrollViewer Padding="8">
             <ui:Frame Name="FrameView" />
