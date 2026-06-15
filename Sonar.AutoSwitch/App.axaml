@@ -9,7 +9,6 @@
              x:DataType="viewModels:AppViewModel">
     <Application.Styles>
         <styling:FluentAvaloniaTheme PreferUserAccentColor="True" PreferSystemTheme="True" />
-        <StyleInclude Source="avares://FluentAvalonia.UI.Windowing/Styles/FAWindowingStyles.axaml" />
         <Style Selector=":is(controls|NavigationView)">
             <Setter Property="autoSwitch:SelectingItemsControlExtension.EnableSelectionAnimation" Value="True" />
         </Style>

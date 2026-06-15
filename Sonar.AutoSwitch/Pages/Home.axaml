@@ -19,7 +19,7 @@
         <TextBlock DockPanel.Dock="Top" Text="Default config: " Margin="0,0,0,4" />
         <ComboBox DockPanel.Dock="Top" SelectedItem="{Binding DefaultSonarGamingConfiguration}"
                   PlaceholderText="Default game configuration" Margin="0,0,0,8"
-                  Items="{Binding Path=AvailableGamingConfigurations, Source={x:Static services:SteelSeriesSonarService.Instance}}">
+                  ItemsSource="{Binding Path=AvailableGamingConfigurations, Source={x:Static services:SteelSeriesSonarService.Instance}}">
             <ComboBox.ItemTemplate>
                 <DataTemplate DataType="services:SonarGamingConfiguration">
                     <TextBlock Text="{Binding Name}" />
@@ -39,7 +39,7 @@
             </StackPanel>
             <ListBox DockPanel.Dock="Left" MinWidth="300" HorizontalAlignment="Stretch" Margin="0,0,2,0"
                      SelectedItem="{Binding SelectedAutoSwitchProfileViewModel}"
-                     Items="{Binding AutoSwitchProfiles}">
+                     ItemsSource="{Binding AutoSwitchProfiles}">
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="viewModels:AutoSwitchProfileViewModel">
                         <TextBlock Text="{Binding DisplayName}" />
@@ -81,7 +81,7 @@
 
                 <ComboBox Grid.Row="2" Grid.Column="1" SelectedItem="{Binding SonarGamingConfiguration}"
                           VerticalAlignment="Top"
-                          Items="{Binding Path=AvailableGamingConfigurations, Source={x:Static services:SteelSeriesSonarService.Instance}}">
+                          ItemsSource="{Binding Path=AvailableGamingConfigurations, Source={x:Static services:SteelSeriesSonarService.Instance}}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate DataType="services:SonarGamingConfiguration">
                             <TextBlock Text="{Binding Name}" />

@@ -63,7 +63,9 @@ public class SelectingItemsControlExtension
         if (pipeVisual == null || newSelectionVisual == null || oldSelectionVisual == null) return;
 
         // Calculate the offset between old and new selections
-        Vector3 selectionOffset = oldSelectionVisual.Offset - newSelectionVisual.Offset;
+        // ponytail: Avalonia.Vector3D in 11.3+, cast to System.Numerics.Vector3 for animation API
+        var rawOffset = oldSelectionVisual.Offset - newSelectionVisual.Offset;
+        Vector3 selectionOffset = new Vector3((float)rawOffset.X, (float)rawOffset.Y, (float)rawOffset.Z);
         // Check whether the offset is vertical (e.g. ListBox) or horizontal (e.g. TabControl)
         // Note this code assumes the items are aligned in the SelectingItemsControl
         bool isVerticalOffset = selectionOffset.Y != 0;
@@ -77,10 +79,11 @@ public class SelectingItemsControlExtension
         // Create new offset animation between old selection position to the current position
         Vector3KeyFrameAnimation offsetAnimation = compositor.CreateVector3KeyFrameAnimation();
         offsetAnimation.Target = "Offset";
+        var pipeOffset = new Vector3((float)pipeVisual.Offset.X, (float)pipeVisual.Offset.Y, (float)pipeVisual.Offset.Z);
         offsetAnimation.InsertKeyFrame(0f,
-            isVerticalOffset ? pipeVisual.Offset with {Y = offset} : pipeVisual.Offset with {X = offset},
+            isVerticalOffset ? pipeOffset with {Y = offset} : pipeOffset with {X = offset},
             quadraticEaseIn);
-        offsetAnimation.InsertKeyFrame(1f, pipeVisual.Offset, quadraticEaseIn);
+        offsetAnimation.InsertKeyFrame(1f, pipeOffset, quadraticEaseIn);
         offsetAnimation.Duration = TimeSpan.FromMilliseconds(250);
 
         // Create small scale animation so the pipe will "stretch" while it's moving
