@@ -57,35 +57,57 @@ public class SteelSeriesSonarService
             return;
 
         var sw = Stopwatch.StartNew();
-        Process[] processesByName = Process.GetProcessesByName("SteelSeriesSonar");
-        if (processesByName.Length <= 0 || cancellationToken.IsCancellationRequested)
+
+        // Fast path: try cached port first — skip the expensive TCP scan entirely.
+        if (_lastWorkingPort != null)
+        {
+            AutoSwitchService.Log($"PortScan: 0ms, cachedPort={_lastWorkingPort.Value}");
+            if (cancellationToken.IsCancellationRequested) return;
+            var t0 = sw.ElapsedMilliseconds;
+            HttpResponseMessage? resp = null;
+            try { resp = await _httpClient.PutAsync($"http://localhost:{_lastWorkingPort.Value}/configs/{sonarGamingConfiguration.Id}/select", new StringContent(""), cancellationToken); }
+            catch (Exception) { }
+            AutoSwitchService.Log($"PUT :{_lastWorkingPort.Value} → {resp?.StatusCode.ToString() ?? "null"} [{sw.ElapsedMilliseconds - t0}ms]");
+            if (resp?.StatusCode == HttpStatusCode.OK)
+            {
+                AutoSwitchService.Log($"ChangeConfig: ok [{sw.ElapsedMilliseconds}ms total]");
+                return;
+            }
+            if (cancellationToken.IsCancellationRequested) return;
+            // Cached port is stale (Sonar restarted). Clear and fall through to full scan.
+            _lastWorkingPort = null;
+        }
+
+        // Slow path: full TCP scan — only on first call or after cache miss.
+        Process[] procs = Process.GetProcessesByName("SteelSeriesSonar");
+        if (procs.Length <= 0 || cancellationToken.IsCancellationRequested)
+        {
+            foreach (var p in procs) p.Dispose();
             return;
+        }
 
-        IEnumerable<int> potentialPorts = processesByName.SelectMany(p => NetworkHelper.GetPortById(p.Id, false));
-        AutoSwitchService.Log($"PortScan: {sw.ElapsedMilliseconds}ms, cachedPort={_lastWorkingPort?.ToString() ?? "none"}");
-
-        potentialPorts = _lastWorkingPort != null ? potentialPorts.Prepend(_lastWorkingPort.Value) : potentialPorts;
+        IEnumerable<int> potentialPorts = procs.SelectMany(p => NetworkHelper.GetPortById(p.Id, false));
+        AutoSwitchService.Log($"PortScan: {sw.ElapsedMilliseconds}ms, cachedPort=none");
 
         bool switched = false;
-        foreach (int potentialPort in potentialPorts.Distinct())
+        foreach (int port in potentialPorts.Distinct())
         {
-            if (cancellationToken.IsCancellationRequested)
-                return;
+            if (cancellationToken.IsCancellationRequested) break;
             var t0 = sw.ElapsedMilliseconds;
-            HttpResponseMessage? httpResponseMessage = await _httpClient.PutAsync(
-                $"http://localhost:{potentialPort}/configs/{sonarGamingConfiguration.Id}/select",
-                new StringContent(""),
-                cancellationToken).ContinueWith(t => t.IsCompletedSuccessfully ? t.Result : null);
-            AutoSwitchService.Log($"PUT :{potentialPort} → {httpResponseMessage?.StatusCode.ToString() ?? "null"} [{sw.ElapsedMilliseconds - t0}ms]");
-            if (httpResponseMessage?.StatusCode == HttpStatusCode.OK)
+            HttpResponseMessage? resp = null;
+            try { resp = await _httpClient.PutAsync($"http://localhost:{port}/configs/{sonarGamingConfiguration.Id}/select", new StringContent(""), cancellationToken); }
+            catch (Exception) { }
+            AutoSwitchService.Log($"PUT :{port} → {resp?.StatusCode.ToString() ?? "null"} [{sw.ElapsedMilliseconds - t0}ms]");
+            if (resp?.StatusCode == HttpStatusCode.OK)
             {
-                _lastWorkingPort = potentialPort;
+                _lastWorkingPort = port;
                 switched = true;
                 break;
             }
         }
-        if (!switched)
-            _lastWorkingPort = null;
+
+        foreach (var p in procs) p.Dispose();
+        if (!switched) _lastWorkingPort = null;
         AutoSwitchService.Log($"ChangeConfig: {(switched ? "ok" : "failed")} [{sw.ElapsedMilliseconds}ms total]");
     }
 
