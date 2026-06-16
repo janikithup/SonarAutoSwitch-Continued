@@ -22,7 +22,8 @@
                     AutomationProperties.Name="Add profile">
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <ui:SymbolIcon Symbol="Add" />
-                    <TextBlock Text="Add profile" VerticalAlignment="Center" />
+                    <TextBlock Text="Add profile" VerticalAlignment="Center"
+                           IsVisible="{Binding IsPaneOpen, RelativeSource={RelativeSource AncestorType=ui:NavigationView}}" />
                 </StackPanel>
             </Button>
         </ui:NavigationView.PaneFooter>
