@@ -53,6 +53,13 @@ Fix: add `AutomationProperties.Name="Add profile"` / `"Delete profile"`.
 **A3 — Exe name and Window title edit fields have no accessible name**
 Fix: add `AutomationProperties.Name="Game executable name"` etc.
 
+**B5 — Delete confirmation appears below the fold at default window size**
+The delete row (Row 3 in the profile Grid) sits below the Sonar gaming config combobox. At the
+default 500px window height, the "Delete this profile? Yes, delete | Cancel" row is not visible
+without scrolling. Users may click delete and see nothing happen.
+Fix: scroll the profile form into view after `StartDelete`, or move the delete row above the config
+combobox, or make the form more compact.
+
 ## Test infrastructure
 
 **T1 — FlaUI screenshots miss popup/flyout states**

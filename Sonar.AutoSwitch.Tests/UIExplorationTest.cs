@@ -1,5 +1,8 @@
 using System;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using FlaUI.Core;
@@ -137,17 +140,34 @@ public class UIExplorationTest : IDisposable
         File.WriteAllText(Path.Combine(OutDir, "tree.txt"), result);
     }
 
-    // Avalonia reports UIA bounding rects in logical pixels; Capture.Element() captures
-    // that logical-sized region at physical scale, clipping ~20% at 125% DPI.
-    // Capture.Screen() is DPI-agnostic and always shows the full window.
-    private void ShotWindow(string name) => ShotScreen(name);
+    // PrintWindow captures the window at its physical rendered size directly from the HWND.
+    // This avoids all DPI coordinate-system mismatches between Avalonia's UIA bounds and GDI.
+    private void ShotWindow(string name)
+    {
+        var hwnd = new IntPtr(_window.Properties.NativeWindowHandle.Value);
+        GetWindowRect(hwnd, out var r);
+        int w = r.Right - r.Left, h = r.Bottom - r.Top;
+        using var bmp = new Bitmap(w, h);
+        using var g = Graphics.FromImage(bmp);
+        var hdc = g.GetHdc();
+        try { PrintWindow(hwnd, hdc, 2 /* PW_RENDERFULLCONTENT */); }
+        finally { g.ReleaseHdc(hdc); }
+        bmp.Save(Path.Combine(OutDir, $"{name}.png"), ImageFormat.Png);
+        _out.WriteLine($"Shot (window): {name}.png");
+    }
 
     private void ShotScreen(string name)
     {
         var path = Path.Combine(OutDir, $"{name}.png");
         Capture.Screen().ToFile(path);
-        _out.WriteLine($"Shot: {path}");
+        _out.WriteLine($"Shot (screen): {name}.png");
     }
+
+    [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hWnd, out WinRect r);
+    [DllImport("user32.dll")] private static extern bool PrintWindow(IntPtr hWnd, IntPtr hDC, uint f);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct WinRect { public int Left, Top, Right, Bottom; }
 
     private AutomationElement? FindExpandedGroup()
     {
