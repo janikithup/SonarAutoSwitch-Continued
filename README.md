@@ -1,44 +1,25 @@
-# Sonar.AutoSwitch
+# Sonar.AutoSwitch — Continued
 
-Automatically switch Sonar gaming configurations when a game is in focus.
+A continuation of [adirh3/Sonar.AutoSwitch](https://github.com/adirh3/Sonar.AutoSwitch).
+Automatically switches your SteelSeries Sonar gaming audio profile when a game comes into focus.
 
-<img width="688" alt="image" src="https://user-images.githubusercontent.com/27368554/204064870-da45ebaa-e577-4998-aaa1-4c18386149e1.png">
-
-## Contribution to game database
-
-Auto switch will switch based on game database in `game_database.json`.  
-Feel free to create pull requests to add more games, the schema of the JSON is -
-```json
-{
-  "SonarProfileName": "Game Name", // Game Name as shown in UI (required)
-  "ExeName": "FileName", // Filter based on Exe name without the .exe (optional)
-  "Title": "WindowTitle" // Filter based on window title (optional)
-}
-```
-`ExeName` or `Title` must be filled for it to work.
-
+![screenshot](screenshot.png)
 
 ## How to use
 
-1. Download the app from the release section.
-2. Extract the ZIP and launch `Sonar.AutoSwitch.exe`
-3. Set the `Per app config` per game / apps
-4. Set the `Default config` to apply to all **other** games/apps
-5. To set game, set the `Executable name` of the app. For some games like Valorant it won't work, if that's the case then use `Title` instead and leave the `Executable name` empty.
+1. Download `Sonar.AutoSwitch.exe` from the [latest release](https://github.com/janikithup/SonarAutoSwitch-Continued/releases/latest).
+2. Run it — it sits in the system tray.
+3. Set a **Default config** — this applies when no game profile matches.
+4. Add a profile per game using the **+** button. Click a profile to expand it and set:
+   - **Executable name** — the process name without `.exe` (check Task Manager). Autocompletes from running processes.
+   - **Window title** — use this instead for games like Valorant where the exe can't be read.
+5. That's it. Switch to a game and Sonar switches with it.
 
-### Built With
-* [dotnet-7.0](https://dotnet.microsoft.com/download/dotnet-core/7.0)
-* [avalonia](https://github.com/AvaloniaUI/Avalonia/)
+## Build
 
-## Build and run
+Requires .NET 8.
 
-1. Install .NET 7
-2. Go into repo folder
-3. Run `dotnet run` in command line
-
-## Publish command
-
-Currently releases uses single file publish - 
-```
-dotnet publish -c release -r win10-x64 --self-contained=true /p:PublishSingleFile=true
+```powershell
+cd Sonar.AutoSwitch
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
