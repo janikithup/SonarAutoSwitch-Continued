@@ -44,7 +44,8 @@ static class TrayBalloon
     static extern bool DestroyIcon(IntPtr hIcon);
 
     const uint NIM_ADD = 0, NIM_MODIFY = 1, NIM_DELETE = 2, NIM_SETVERSION = 4;
-    const uint NIF_MESSAGE = 1, NIF_ICON = 2, NIF_TIP = 4, NIF_INFO = 0x10;
+    const uint NIF_MESSAGE = 1, NIF_ICON = 2, NIF_TIP = 4, NIF_STATE = 8, NIF_INFO = 0x10;
+    const uint NIS_HIDDEN = 1;
     const uint NIIF_INFO = 1;
     const uint NOTIFYICON_VERSION_4 = 4;
     static readonly IntPtr HWND_MESSAGE = new(-3);
@@ -74,7 +75,10 @@ static class TrayBalloon
             cbSize = (uint)Marshal.SizeOf<NOTIFYICONDATA>(),
             hWnd = hwnd,
             uID = 1,
-            uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP,
+            // ponytail: NIS_HIDDEN keeps icon in overflow area; avoids duplicate in main tray strip.
+            uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_STATE,
+            dwState = NIS_HIDDEN,
+            dwStateMask = NIS_HIDDEN,
             hIcon = hIcon,
             szTip = "Sonar Auto Switch",
         };
@@ -92,7 +96,7 @@ static class TrayBalloon
         var modOk = Shell_NotifyIcon(NIM_MODIFY, ref data);
         Log($"NIM_MODIFY ok={modOk} err={Marshal.GetLastWin32Error()}");
 
-        _ = Task.Delay(10_000).ContinueWith(_ => Dispatcher.UIThread.Post(() =>
+        _ = Task.Delay(5_000).ContinueWith(_ => Dispatcher.UIThread.Post(() =>
         {
             var del = new NOTIFYICONDATA
             {
