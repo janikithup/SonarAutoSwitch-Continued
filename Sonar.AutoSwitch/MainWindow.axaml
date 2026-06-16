@@ -18,7 +18,8 @@
             <Button Click="AddProfile_Click"
                     HorizontalAlignment="Left"
                     Margin="4,0,4,8"
-                    ToolTip.Tip="Add profile">
+                    ToolTip.Tip="Add profile"
+                    AutomationProperties.Name="Add profile">
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <ui:SymbolIcon Symbol="Add" />
                     <TextBlock Text="Add profile" VerticalAlignment="Center" />

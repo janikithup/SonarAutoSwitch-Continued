@@ -12,9 +12,12 @@ The test launches the published dev exe, which shares `%LOCALAPPDATA%\Sonar.Auto
 installed app. Running tests re-registers the Windows startup entry to the dev path.
 Fix: pass a `--state-dir <temp>` argument to the test exe so state is isolated.
 
-**B3 — Port scan cache reset on every switch (8–14s delay)**
-`SteelSeriesSonarService.cs` line 65 resets `_lastWorkingPort` before iterating ports, negating
-the cache. Fix: only reset on failure.
+**B3 — Port scan runs on every switch regardless of cache (suspected 8–14s delay)**
+`SteelSeriesSonarService.ChangeSelectedGamingConfiguration` calls `NetworkHelper.GetPortById`
+unconditionally before checking `_lastWorkingPort`. The cache port is prepended to the scan
+results as a fast-path, but the full TCP scan still runs every time. Fix: try `_lastWorkingPort`
+first; only run `GetPortById` if it fails. Use `debug.log` "PortScan:" entries to measure actual
+delay before changing anything.
 
 **B4 — `--show` flag unnecessarily saves SettingsViewModel**
 The `--show` branch in App.axaml.cs calls `SaveState<SettingsViewModel>()` even when not firstLoad.
@@ -52,13 +55,6 @@ Fix: add `AutomationProperties.Name="Add profile"` / `"Delete profile"`.
 
 **A3 — Exe name and Window title edit fields have no accessible name**
 Fix: add `AutomationProperties.Name="Game executable name"` etc.
-
-**B5 — Delete confirmation appears below the fold at default window size**
-The delete row (Row 3 in the profile Grid) sits below the Sonar gaming config combobox. At the
-default 500px window height, the "Delete this profile? Yes, delete | Cancel" row is not visible
-without scrolling. Users may click delete and see nothing happen.
-Fix: scroll the profile form into view after `StartDelete`, or move the delete row above the config
-combobox, or make the form more compact.
 
 ## Test infrastructure
 

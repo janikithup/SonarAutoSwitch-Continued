@@ -50,17 +50,29 @@ public class SteelSeriesSonarService
         }
     }
 
+    private static readonly string LogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Sonar.AutoSwitch", "debug.log");
+
+    private static void Log(string message)
+    {
+        try { File.AppendAllText(LogPath, $"{DateTime.Now:HH:mm:ss.fff} {message}\n"); }
+        catch { }
+    }
+
     public async Task ChangeSelectedGamingConfiguration(SonarGamingConfiguration sonarGamingConfiguration,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(sonarGamingConfiguration.Id))
             return;
 
+        var sw = Stopwatch.StartNew();
         Process[] processesByName = Process.GetProcessesByName("SteelSeriesSonar");
         if (processesByName.Length <= 0 || cancellationToken.IsCancellationRequested)
             return;
-        
+
         IEnumerable<int> potentialPorts = processesByName.SelectMany(p => NetworkHelper.GetPortById(p.Id, false));
+        Log($"PortScan: {sw.ElapsedMilliseconds}ms, cachedPort={_lastWorkingPort?.ToString() ?? "none"}");
 
         potentialPorts = _lastWorkingPort != null ? potentialPorts.Prepend(_lastWorkingPort.Value) : potentialPorts;
 
@@ -69,10 +81,12 @@ public class SteelSeriesSonarService
         {
             if (cancellationToken.IsCancellationRequested)
                 return;
+            var putSw = Stopwatch.StartNew();
             HttpResponseMessage? httpResponseMessage = await _httpClient.PutAsync(
                 $"http://localhost:{potentialPort}/configs/{sonarGamingConfiguration.Id}/select",
                 new StringContent(""),
                 cancellationToken).ContinueWith(t => t.IsCompletedSuccessfully ? t.Result : null);
+            Log($"PUT :{potentialPort} → {httpResponseMessage?.StatusCode.ToString() ?? "null"} [{putSw.ElapsedMilliseconds}ms]");
             if (httpResponseMessage?.StatusCode == HttpStatusCode.OK)
             {
                 _lastWorkingPort = potentialPort;
@@ -82,7 +96,7 @@ public class SteelSeriesSonarService
         }
         if (!switched)
             _lastWorkingPort = null;
-
+        Log($"ChangeConfig: {(switched ? "ok" : "failed")} [{sw.ElapsedMilliseconds}ms total]");
     }
 
     public string GetSelectedGamingConfiguration()

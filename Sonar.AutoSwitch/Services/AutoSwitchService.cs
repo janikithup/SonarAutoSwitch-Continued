@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -51,6 +52,7 @@ public class AutoSwitchService
 
     private async void InstanceOnForegroundWindowChanged(object? sender, WindowInfo e)
     {
+        var sw = Stopwatch.StartNew();
         try
         {
             string? windowExeName = e.ExeName;
@@ -79,7 +81,7 @@ public class AutoSwitchService
                         (string.IsNullOrEmpty(p.Title) || e.Title.Contains(p.Title, StringComparison.OrdinalIgnoreCase)));
                 SonarGamingConfiguration? sonarGamingConfiguration = autoSwitchProfileViewModel?.SonarGamingConfiguration;
                 sonarGamingConfiguration ??= _homeViewModel.DefaultSonarGamingConfiguration;
-                Log($"Matched profile: {autoSwitchProfileViewModel?.Title ?? "(none→default)"} → config={sonarGamingConfiguration?.Name} id={sonarGamingConfiguration?.Id}");
+                Log($"Matched: {autoSwitchProfileViewModel?.Title ?? "(none→default)"} → {sonarGamingConfiguration?.Name} [{sw.ElapsedMilliseconds}ms]");
 
                 _homeViewModel.ActiveProfile = sonarGamingConfiguration;
 
@@ -94,17 +96,17 @@ public class AutoSwitchService
                 {
                     string selectedGamingConfigurationId =
                         SteelSeriesSonarService.Instance.GetSelectedGamingConfiguration();
-                    Log($"Current Sonar config: {selectedGamingConfigurationId}");
+                    Log($"CurrentConfig: {selectedGamingConfigurationId} [{sw.ElapsedMilliseconds}ms]");
                     _selectedGamingConfiguration = sonarGamingConfiguration;
                     if (sonarGamingConfiguration.Id == selectedGamingConfigurationId)
                     {
-                        Log("Already on correct config, skipping");
+                        Log("Already correct, skipping");
                         return;
                     }
-                    Log($"Switching to {sonarGamingConfiguration.Name}...");
+                    Log($"Switching to {sonarGamingConfiguration.Name}... [{sw.ElapsedMilliseconds}ms]");
                     await SteelSeriesSonarService.Instance.ChangeSelectedGamingConfiguration(sonarGamingConfiguration,
                         _cancellationTokenSource.Token);
-                    Log("Switch complete");
+                    Log($"Switch complete [{sw.ElapsedMilliseconds}ms]");
                 }
                 catch (Exception ex)
                 {

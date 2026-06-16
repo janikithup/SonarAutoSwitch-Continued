@@ -124,13 +124,76 @@ public class UIExplorationTest : IDisposable
             ShotScreen("5-autocomplete-dropdown");
             // Clear by selecting all and deleting — exeEdit.Enter("") only appends on some builds
             exeEdit.Focus();
-            exeEdit.Select(0, 100);
             Thread.Sleep(100);
-            exeEdit.Enter("");
+            exeEdit.Enter(""); // SetValue clears the field
             Thread.Sleep(100);
         }
 
         _out.WriteLine($"Screenshots saved to {OutDir}");
+    }
+
+    // Proves the Win32 foreground hook fires and logs correctly.
+    // If Sonar is running, also surfaces PortScan/PUT timing in the output.
+    [Fact]
+    public void Foreground_switch_fires_and_logs()
+    {
+        var logPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Sonar.AutoSwitch", "debug.log");
+
+        var beforeLines = File.Exists(logPath) ? File.ReadAllLines(logPath).Length : 0;
+
+        // Start notepad to trigger a real foreground window change
+        var notepad = System.Diagnostics.Process.Start("notepad.exe")!;
+        Thread.Sleep(1200); // let it get focus and the hook fire
+        notepad.Kill();
+        notepad.WaitForExit(2000);
+        Thread.Sleep(400);
+
+        var newLines = File.Exists(logPath)
+            ? File.ReadAllLines(logPath).Skip(beforeLines).ToArray()
+            : Array.Empty<string>();
+
+        _out.WriteLine($"New log lines ({newLines.Length}):");
+        foreach (var l in newLines) _out.WriteLine(l);
+
+        Assert.True(newLines.Any(l => l.Contains("ForegroundChanged") &&
+                                      l.Contains("notepad", StringComparison.OrdinalIgnoreCase)),
+            "Win32 foreground hook did not fire for notepad. Hook may be broken or log path wrong.");
+
+        // Report timing if a switch happened (requires Sonar running + matching profile)
+        var switchLine = newLines.FirstOrDefault(l => l.Contains("Switch complete"));
+        if (switchLine != null)
+            _out.WriteLine($"TIMING: {switchLine}");
+        else
+            _out.WriteLine("No switch triggered (expected if no profile matches notepad or Sonar not running).");
+    }
+
+    [Fact]
+    public void Add_profile_creates_new_expander()
+    {
+        var before = _window.FindAllDescendants(cf => cf.ByControlType(ControlType.Group)).Length;
+
+        var addBtn = _window.FindFirstDescendant(cf =>
+            cf.ByName("Add profile").And(cf.ByControlType(ControlType.Button)))?.AsButton();
+        Assert.NotNull(addBtn);
+        addBtn!.Click();
+        Thread.Sleep(500);
+
+        var after = _window.FindAllDescendants(cf => cf.ByControlType(ControlType.Group)).Length;
+        Assert.True(after > before, $"Group count did not increase after Add: before={before}, after={after}");
+
+        ShotWindow("add-profile-result");
+
+        // Clean up: delete the new profile so state is not polluted between test runs
+        var deleteBtn = _window.FindFirstDescendant(cf =>
+            cf.ByName("Delete profile").And(cf.ByControlType(ControlType.Button)))?.AsButton();
+        deleteBtn?.Click();
+        Thread.Sleep(200);
+        var confirmBtn = _window.FindFirstDescendant(cf =>
+            cf.ByName("Yes, delete").And(cf.ByControlType(ControlType.Button)))?.AsButton();
+        confirmBtn?.Click();
+        Thread.Sleep(200);
     }
 
     [Fact]
