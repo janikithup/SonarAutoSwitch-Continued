@@ -33,7 +33,18 @@ public class SettingsViewModel : ViewModelBase
         }
     }
 
-    public bool UseGithubConfigs { get; set; } = true;
+    private bool _useGithubConfigs = true;
+
+    public bool UseGithubConfigs
+    {
+        get => _useGithubConfigs;
+        set
+        {
+            if (value == _useGithubConfigs) return;
+            _useGithubConfigs = value;
+            OnPropertyChanged();
+        }
+    }
 
     // ponytail: auto-property so JSON sets it without triggering side-effects via [JsonConstructor] path.
     public bool HasShownTrayNotification { get; set; }
@@ -57,7 +68,7 @@ public class SettingsViewModel : ViewModelBase
     {
         _enabled = enabled;
         _startAtStartup = startAtStartup;
-        UseGithubConfigs = useGithubConfigs;
+        _useGithubConfigs = useGithubConfigs;
         _closeToTray = closeToTray;
     }
 
@@ -77,6 +88,6 @@ public class SettingsViewModel : ViewModelBase
     protected override void OnPropertyChanged(string? propertyName = null)
     {
         base.OnPropertyChanged(propertyName);
-        StateManager.Instance.SaveState<SettingsViewModel>();
+        StateManager.Instance.SaveStateNow<SettingsViewModel>();
     }
 }

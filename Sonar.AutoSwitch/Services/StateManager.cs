@@ -8,7 +8,7 @@ namespace Sonar.AutoSwitch.Services;
 public class StateManager
 {
     private readonly string _appDataPath;
-    private readonly DelayedDeduplicateAction _delayedDeduplicateAction = new();
+    private readonly Dictionary<Type, DelayedDeduplicateAction> _saveActions = new();
     private readonly Dictionary<Type, object?> _states = new();
 
 
@@ -27,7 +27,10 @@ public class StateManager
 
         if (!Directory.Exists(_appDataPath)) Directory.CreateDirectory(_appDataPath);
 
-        _delayedDeduplicateAction.QueueAction(async () =>
+        if (!_saveActions.TryGetValue(typeof(T), out var action))
+            _saveActions[typeof(T)] = action = new DelayedDeduplicateAction();
+
+        action.QueueAction(async () =>
         {
             string jsonPath = Path.Combine(_appDataPath, typeof(T).Name + ".json");
 #pragma warning disable IL2026
@@ -36,6 +39,15 @@ public class StateManager
         });
     }
 
+    public void SaveStateNow<T>()
+    {
+        if (GetState<T>() is not { } state) return;
+        if (!Directory.Exists(_appDataPath)) Directory.CreateDirectory(_appDataPath);
+        string jsonPath = Path.Combine(_appDataPath, typeof(T).Name + ".json");
+#pragma warning disable IL2026
+        File.WriteAllText(jsonPath, JsonSerializer.Serialize(state));
+#pragma warning restore IL2026
+    }
 
     public T GetOrLoadState<T>() where T : new()
     {

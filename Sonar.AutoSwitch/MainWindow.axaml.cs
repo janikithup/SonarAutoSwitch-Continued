@@ -30,7 +30,7 @@ public partial class MainWindow : Window
             if (!settings.HasShownTrayNotification)
             {
                 settings.HasShownTrayNotification = true;
-                StateManager.Instance.SaveState<SettingsViewModel>();
+                StateManager.Instance.SaveStateNow<SettingsViewModel>();
                 TrayBalloon.Show("Sonar Auto Switch",
                     "Still running in the background. Right-click the tray icon to exit.");
             }

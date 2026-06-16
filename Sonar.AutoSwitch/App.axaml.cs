@@ -33,7 +33,7 @@ public class App : Application
                 desktop.MainWindow.Show();
             }
             if (firstLoad)
-                StateManager.Instance.SaveState<SettingsViewModel>();
+                StateManager.Instance.SaveStateNow<SettingsViewModel>();
         }
 
         var homeViewModel = StateManager.Instance.GetOrLoadState<HomeViewModel>();
