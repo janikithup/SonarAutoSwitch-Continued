@@ -25,9 +25,13 @@ public class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-            desktop.MainWindow = new MainWindow();
+            // ponytail: Avalonia auto-shows desktop.MainWindow in Start(). Only create it when
+            // it should be visible; Open() creates it lazily via MainWindow ??= new MainWindow().
             if (firstLoad || (desktop.Args ?? []).Contains("--show"))
+            {
+                desktop.MainWindow = new MainWindow();
                 desktop.MainWindow.Show();
+            }
             if (firstLoad)
                 StateManager.Instance.SaveState<SettingsViewModel>();
         }
