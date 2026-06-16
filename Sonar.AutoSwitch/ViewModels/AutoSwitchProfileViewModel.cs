@@ -50,6 +50,13 @@ public class AutoSwitchProfileViewModel : ViewModelBase
         }
     }
 
+    public DateTime? CreatedAt { get; set; }
+
+    [JsonIgnore] public bool HasCreatedAt => CreatedAt.HasValue;
+
+    [JsonIgnore]
+    public string CreatedAtLabel => CreatedAt?.ToLocalTime().ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture) ?? "";
+
     [JsonIgnore]
     public bool IsExpanded
     {

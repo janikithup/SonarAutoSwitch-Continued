@@ -108,9 +108,6 @@ public class HomeViewModel : ViewModelBase
         }
     }
 
-    // 0=end, 1=top, -1=don't scroll (alphabetical — item lands in the middle)
-    [JsonIgnore] public int NewProfileScrollHint => _sortDirection switch { 2 => 1, 1 or -1 => -1, _ => 0 };
-
     [JsonIgnore]
     public string SortModeLabel => _sortDirection switch
     {

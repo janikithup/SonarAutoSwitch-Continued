@@ -18,17 +18,6 @@ public class HomeViewModelTest
     }
 
     [Fact]
-    public void NewProfileScrollHint_is_bottom_for_manual_top_for_newest_skip_for_alphabetical()
-    {
-        var home = new HomeViewModel();
-        Assert.Equal(0, home.NewProfileScrollHint);  // manual → scroll to end
-        home.CycleSort(); Assert.Equal(-1, home.NewProfileScrollHint); // A→Z → skip
-        home.CycleSort(); Assert.Equal(-1, home.NewProfileScrollHint); // Z→A → skip
-        home.CycleSort(); Assert.Equal(1,  home.NewProfileScrollHint); // newest-first → scroll to top
-        home.CycleSort(); Assert.Equal(0,  home.NewProfileScrollHint); // oldest-first → scroll to end
-    }
-
-    [Fact]
     public void AddAutoSwitchProfile_stamps_CreatedAt()
     {
         var home = new HomeViewModel();

@@ -43,14 +43,11 @@
         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top"
                     Margin="0,0,0,8" Spacing="4">
             <TextBlock Text="Sort:" VerticalAlignment="Center" Opacity="0.7" />
-            <Button Command="{Binding SortAscending}"
-                    IsEnabled="{Binding !SortAscendingActive}"
-                    ToolTip.Tip="Sort A to Z (display only)"
-                    AutomationProperties.Name="Sort A to Z">A-Z</Button>
-            <Button Command="{Binding SortDescending}"
-                    IsEnabled="{Binding !SortDescendingActive}"
-                    ToolTip.Tip="Sort Z to A (display only)"
-                    AutomationProperties.Name="Sort Z to A">Z-A</Button>
+            <Button Command="{Binding CycleSort}"
+                    ToolTip.Tip="{Binding SortModeTooltip}"
+                    AutomationProperties.Name="Cycle sort order"
+                    MinWidth="36"
+                    Content="{Binding SortModeLabel}" />
         </StackPanel>
 
         <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding FilteredProfiles}"
@@ -63,11 +60,10 @@
                               Margin="0,1"
                               AutomationProperties.Name="{Binding DisplayName}">
                         <Expander.Header>
-                            <TextBlock Text="{Binding DisplayName}"
-                                       AutomationProperties.Name="{Binding DisplayName}" />
+                            <TextBlock Text="{Binding DisplayName}" />
                         </Expander.Header>
 
-                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto"
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto"
                               Margin="8,8,0,4">
 
                             <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,12,0">
@@ -110,7 +106,13 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
 
-                            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal"
+                            <TextBlock Grid.Row="3" Grid.Column="1"
+                                       Text="{Binding CreatedAtLabel}"
+                                       IsVisible="{Binding HasCreatedAt}"
+                                       Opacity="0.4" FontSize="10"
+                                       Margin="0,8,0,0" />
+
+                            <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal"
                                         Margin="0,12,0,0" HorizontalAlignment="Right" Spacing="8">
                                 <Button IsVisible="{Binding !IsConfirmingDelete}"
                                         Command="{Binding StartDelete}"
