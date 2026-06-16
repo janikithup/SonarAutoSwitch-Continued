@@ -18,9 +18,6 @@
             <TrayIcon Command="{Binding Open}" Icon="/Assets/icon.ico" ToolTipText="{Binding TrayTooltipText}">
                 <TrayIcon.Menu>
                     <NativeMenu>
-                        <NativeMenuItem Header="Running in background — click to dismiss"
-                                        IsVisible="{Binding ShowRunningInBackgroundNotice}"
-                                        Command="{Binding DismissBackgroundNotice}" />
                         <NativeMenuItem Header="Open" Command="{Binding Open}" />
                         <NativeMenuItem Header="Exit" Command="{Binding Exit}" />
                     </NativeMenu>

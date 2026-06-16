@@ -5,6 +5,7 @@ using Avalonia.Threading;
 using FluentAvalonia.UI.Controls;
 using Sonar.AutoSwitch.Pages;
 using Sonar.AutoSwitch.Services;
+using Sonar.AutoSwitch.Services.Win32;
 using Sonar.AutoSwitch.ViewModels;
 
 namespace Sonar.AutoSwitch;
@@ -23,8 +24,16 @@ public partial class MainWindow : Window
     protected override void OnClosing(WindowClosingEventArgs e)
     {
         base.OnClosing(e);
-        if (StateManager.Instance.GetOrLoadState<SettingsViewModel>().CloseToTray)
+        var settings = StateManager.Instance.GetOrLoadState<SettingsViewModel>();
+        if (settings.CloseToTray)
         {
+            if (!settings.HasShownTrayNotification)
+            {
+                settings.HasShownTrayNotification = true;
+                StateManager.Instance.SaveState<SettingsViewModel>();
+                TrayBalloon.Show("Sonar Auto Switch",
+                    "Still running in the background. Right-click the tray icon to exit.");
+            }
             Hide();
             e.Cancel = true;
         }

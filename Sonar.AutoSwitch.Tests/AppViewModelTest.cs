@@ -58,27 +58,6 @@ public class AppViewModelTest
     }
 
     [Fact]
-    public void ShowRunningInBackgroundNotice_defaults_to_false()
-    {
-        Assert.False(new AppViewModel().ShowRunningInBackgroundNotice);
-    }
-
-    [Fact]
-    public void DismissBackgroundNotice_clears_notice_and_persists_flag()
-    {
-        var home = new HomeViewModel();
-        var settings = new SettingsViewModel();
-        var vm = new AppViewModel();
-        vm.WireTooltip(home, settings);
-        vm.ShowRunningInBackgroundNotice = true;
-
-        vm.DismissBackgroundNotice();
-
-        Assert.False(vm.ShowRunningInBackgroundNotice);
-        Assert.True(settings.HasShownTrayNotification);
-    }
-
-    [Fact]
     public void StartupDescription_returns_string()
     {
         var vm = new SettingsViewModel();

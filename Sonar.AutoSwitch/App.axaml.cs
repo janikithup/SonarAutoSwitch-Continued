@@ -40,11 +40,6 @@ public class App : Application
         var appVm = (AppViewModel)DataContext!;
         appVm.WireTooltip(homeViewModel, settingsViewModel);
 
-        var hasShowArg = (ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Args is { } args
-                         && args.Contains("--show");
-        if (!firstLoad && !hasShowArg && !settingsViewModel.HasShownTrayNotification)
-            appVm.ShowRunningInBackgroundNotice = true;
-
         if (settingsViewModel.Enabled)
             AutoSwitchService.Instance.ToggleEnabled(settingsViewModel.Enabled);
         if (firstLoad && settingsViewModel.StartAtStartup)

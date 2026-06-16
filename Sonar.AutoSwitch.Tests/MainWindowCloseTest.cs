@@ -35,4 +35,22 @@ public class MainWindowCloseTest
 
         Assert.False(window.IsVisible);
     }
+
+    // First close-to-tray must set HasShownTrayNotification so the balloon fires only once.
+    [AvaloniaFact]
+    public void First_CloseToTray_sets_HasShownTrayNotification()
+    {
+        var settings = StateManager.Instance.GetOrLoadState<SettingsViewModel>();
+        if (!settings.CloseToTray) return;
+
+        var original = settings.HasShownTrayNotification;
+        settings.HasShownTrayNotification = false;
+
+        var window = new MainWindow();
+        window.Show();
+        window.Close();
+
+        Assert.True(settings.HasShownTrayNotification);
+        settings.HasShownTrayNotification = original;
+    }
 }
