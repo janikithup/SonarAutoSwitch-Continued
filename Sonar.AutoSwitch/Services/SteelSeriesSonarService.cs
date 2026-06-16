@@ -67,11 +67,14 @@ public class SteelSeriesSonarService
             HttpResponseMessage? resp = null;
             try { resp = await _httpClient.PutAsync($"http://localhost:{_lastWorkingPort.Value}/configs/{sonarGamingConfiguration.Id}/select", new StringContent(""), cancellationToken); }
             catch (Exception) { }
-            AutoSwitchService.Log($"PUT :{_lastWorkingPort.Value} → {resp?.StatusCode.ToString() ?? "null"} [{sw.ElapsedMilliseconds - t0}ms]");
-            if (resp?.StatusCode == HttpStatusCode.OK)
+            using (resp)
             {
-                AutoSwitchService.Log($"ChangeConfig: ok [{sw.ElapsedMilliseconds}ms total]");
-                return;
+                AutoSwitchService.Log($"PUT :{_lastWorkingPort.Value} → {resp?.StatusCode.ToString() ?? "null"} [{sw.ElapsedMilliseconds - t0}ms]");
+                if (resp?.StatusCode == HttpStatusCode.OK)
+                {
+                    AutoSwitchService.Log($"ChangeConfig: ok [{sw.ElapsedMilliseconds}ms total]");
+                    return;
+                }
             }
             if (cancellationToken.IsCancellationRequested) return;
             // Cached port is stale (Sonar restarted). Clear and fall through to full scan.
@@ -97,12 +100,15 @@ public class SteelSeriesSonarService
             HttpResponseMessage? resp = null;
             try { resp = await _httpClient.PutAsync($"http://localhost:{port}/configs/{sonarGamingConfiguration.Id}/select", new StringContent(""), cancellationToken); }
             catch (Exception) { }
-            AutoSwitchService.Log($"PUT :{port} → {resp?.StatusCode.ToString() ?? "null"} [{sw.ElapsedMilliseconds - t0}ms]");
-            if (resp?.StatusCode == HttpStatusCode.OK)
+            using (resp)
             {
-                _lastWorkingPort = port;
-                switched = true;
-                break;
+                AutoSwitchService.Log($"PUT :{port} → {resp?.StatusCode.ToString() ?? "null"} [{sw.ElapsedMilliseconds - t0}ms]");
+                if (resp?.StatusCode == HttpStatusCode.OK)
+                {
+                    _lastWorkingPort = port;
+                    switched = true;
+                    break;
+                }
             }
         }
 

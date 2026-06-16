@@ -6,7 +6,8 @@
              x:Class="Sonar.AutoSwitch.Pages.About">
     <StackPanel Spacing="4">
         <TextBlock x:Name="VersionText" />
-        <TextBlock Text="Compatible with SteelSeries GG 52.x" />
+        <TextBlock x:Name="UpdatedText" />
+        <TextBlock Text="Compatible with SteelSeries GG 113.x" />
         <TextBlock Text="Not an official SteelSeries product." />
         <HyperlinkButton Content="github.com/janikithup/SonarAutoSwitch-Continued"
                          NavigateUri="https://github.com/janikithup/SonarAutoSwitch-Continued" />
