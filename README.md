@@ -8,7 +8,7 @@ Automatically switches your SteelSeries Sonar gaming audio profile when a game c
 ## How to use
 
 1. Download `Sonar.AutoSwitch.exe` from the [latest release](https://github.com/janikithup/SonarAutoSwitch-Continued/releases/latest).
-2. Run it — it sits in the system tray.
+2. Run it. It sits in the system tray.
 3. Set a **Default config**, which applies when no game profile matches.
 4. Add a profile per game using the **+** button. Click a profile to expand it and set:
    - **Executable name**: the process name without `.exe` (check Task Manager). Autocompletes from running processes.
