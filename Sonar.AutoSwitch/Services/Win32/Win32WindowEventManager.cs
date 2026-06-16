@@ -107,10 +107,8 @@ public class Win32WindowEventManager
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-    private const int WINEVENT_INCONTEXT = 4;
     private const int WINEVENT_OUTOFCONTEXT = 0;
     private const int WINEVENT_SKIPOWNPROCESS = 2;
-    private const int WINEVENT_SKIPOWNTHREAD = 1;
     private const int EVENT_SYSTEM_FOREGROUND = 3;
 
     #endregion

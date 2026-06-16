@@ -14,9 +14,6 @@ namespace Sonar.AutoSwitch.Pages;
 
 public partial class Home : UserControl
 {
-    public static List<string> ProcessNames =>
-        Process.GetProcesses().Select(p => p.ProcessName).Distinct().OrderBy(x => x).ToList();
-
     private readonly AutoCompleteBox? _exeBox;
     private bool _syncing;
 
@@ -25,7 +22,7 @@ public partial class Home : UserControl
         InitializeComponent();
 
         _exeBox = this.GetLogicalDescendants().OfType<AutoCompleteBox>().FirstOrDefault();
-        var names = ProcessNames;
+        var names = Process.GetProcesses().Select(p => p.ProcessName).Distinct().OrderBy(x => x).ToList();
         Log($"ExeNameBox={_exeBox != null}, ProcessNames={names.Count}");
 
         if (_exeBox != null)
