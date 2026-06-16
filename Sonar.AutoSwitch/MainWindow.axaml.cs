@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using FluentAvalonia.UI.Controls;
 using Sonar.AutoSwitch.Pages;
 using Sonar.AutoSwitch.Services;
@@ -66,17 +68,15 @@ public partial class MainWindow : Window
         StateManager.Instance.GetOrLoadState<HomeViewModel>().AddAutoSwitchProfile();
         if (_frameView.CurrentSourcePageType != typeof(Home))
             _frameView.Navigate(typeof(Home));
-        // Scroll to wherever the new profile lands: top (newest-first), bottom (manual/oldest), or skip (alphabetical).
+        // Bring the new profile into view regardless of sort order.
+        // AddAutoSwitchProfile sets IsExpanded=true and the accordion collapses all others,
+        // so the expanded Expander is always the new profile.
         Dispatcher.UIThread.Post(() =>
         {
-            var scroll = this.FindControl<ScrollViewer>("MainScrollViewer");
-            if (scroll is null) return;
-            switch (StateManager.Instance.GetOrLoadState<HomeViewModel>().NewProfileScrollHint)
-            {
-                case 1:  scroll.ScrollToHome(); break;
-                case 0:  scroll.ScrollToEnd();  break;
-                // -1: alphabetical — new profile lands in the middle; don't scroll
-            }
+            this.GetVisualDescendants()
+                .OfType<Expander>()
+                .FirstOrDefault(e => e.IsExpanded)
+                ?.BringIntoView();
         }, DispatcherPriority.Background);
     }
 }

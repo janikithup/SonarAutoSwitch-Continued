@@ -43,6 +43,9 @@ static class TrayBalloon
     [DllImport("user32.dll")]
     static extern bool DestroyIcon(IntPtr hIcon);
 
+    [DllImport("user32.dll")]
+    static extern IntPtr LoadIcon(IntPtr hInstance, IntPtr lpIconName);
+
     const uint NIM_ADD = 0, NIM_MODIFY = 1, NIM_DELETE = 2, NIM_SETVERSION = 4;
     const uint NIF_ICON = 2, NIF_TIP = 4, NIF_STATE = 8, NIF_INFO = 0x10;
     const uint NIS_HIDDEN = 1;
@@ -68,6 +71,11 @@ static class TrayBalloon
         }
 
         var hIcon = ExtractIcon(IntPtr.Zero, Environment.ProcessPath ?? "", 0);
+        if (hIcon == IntPtr.Zero)
+        {
+            Log($"ExtractIcon failed err={Marshal.GetLastWin32Error()}, falling back to IDI_APPLICATION");
+            hIcon = LoadIcon(IntPtr.Zero, new IntPtr(32512)); // IDI_APPLICATION
+        }
         Log($"hwnd={hwnd} hIcon={hIcon}");
 
         var data = new NOTIFYICONDATA
@@ -76,7 +84,8 @@ static class TrayBalloon
             hWnd = hwnd,
             uID = 1,
             // ponytail: NIS_HIDDEN keeps icon in overflow area; avoids duplicate in main tray strip.
-            uFlags = NIF_ICON | NIF_TIP | NIF_STATE,
+            // Drop NIF_ICON if we have no icon — NIM_ADD still succeeds and balloon can still fire.
+            uFlags = (hIcon != IntPtr.Zero ? NIF_ICON : 0) | NIF_TIP | NIF_STATE,
             dwState = NIS_HIDDEN,
             dwStateMask = NIS_HIDDEN,
             hIcon = hIcon,
