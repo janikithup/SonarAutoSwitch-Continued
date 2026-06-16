@@ -1,4 +1,5 @@
-﻿using Sonar.AutoSwitch.Services;
+﻿using System.Text.Json.Serialization;
+using Sonar.AutoSwitch.Services;
 using Sonar.AutoSwitch.Services.Win32;
 
 namespace Sonar.AutoSwitch.ViewModels;
@@ -35,6 +36,19 @@ public class SettingsViewModel : ViewModelBase
     public bool UseGithubConfigs { get; set; } = true;
 
     private bool _closeToTray = true;
+
+    // ponytail: JsonConstructor sets backing fields directly; RegisterInStartup/ToggleEnabled never fire on load.
+    [JsonConstructor]
+    private SettingsViewModel(bool enabled = true, bool startAtStartup = true,
+                              bool useGithubConfigs = true, bool closeToTray = true)
+    {
+        _enabled = enabled;
+        _startAtStartup = startAtStartup;
+        UseGithubConfigs = useGithubConfigs;
+        _closeToTray = closeToTray;
+    }
+
+    public SettingsViewModel() { }
 
     public bool CloseToTray
     {

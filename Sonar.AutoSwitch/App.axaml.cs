@@ -27,10 +27,9 @@ public class App : Application
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             desktop.MainWindow = new MainWindow();
             if (firstLoad || (desktop.Args ?? []).Contains("--show"))
-            {
                 desktop.MainWindow.Show();
+            if (firstLoad)
                 StateManager.Instance.SaveState<SettingsViewModel>();
-            }
         }
 
         if (settingsViewModel.Enabled)

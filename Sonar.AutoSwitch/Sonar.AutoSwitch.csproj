@@ -8,7 +8,7 @@
         <PublishSingleFile>true</PublishSingleFile>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
-        <Version>52.4.0</Version>
+        <Version>52.4.1</Version>
     </PropertyGroup>
     <ItemGroup>
         <None Remove=".gitignore" />
