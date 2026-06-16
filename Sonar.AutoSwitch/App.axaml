@@ -15,7 +15,7 @@
     </Application.Styles>
     <TrayIcon.Icons>
         <TrayIcons>
-            <TrayIcon Command="{Binding Open}" Icon="/Assets/icon.ico" ToolTipText="Sonar Auto Switch">
+            <TrayIcon Command="{Binding Open}" Icon="/Assets/icon.ico" ToolTipText="{Binding TrayTooltipText}">
                 <TrayIcon.Menu>
                     <NativeMenu>
                         <NativeMenuItem Header="Open" Command="{Binding Open}" />

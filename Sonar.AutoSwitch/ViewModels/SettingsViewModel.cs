@@ -35,6 +35,16 @@ public class SettingsViewModel : ViewModelBase
 
     public bool UseGithubConfigs { get; set; } = true;
 
+    [JsonIgnore]
+    public string StartupDescription
+    {
+        get
+        {
+            var path = StartupService.GetRegisteredPath();
+            return path is null ? "Not registered with Windows startup" : $"Registered: {path}";
+        }
+    }
+
     private bool _closeToTray = true;
 
     // ponytail: JsonConstructor sets backing fields directly; RegisterInStartup/ToggleEnabled never fire on load.

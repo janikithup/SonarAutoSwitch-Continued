@@ -6,6 +6,12 @@ namespace Sonar.AutoSwitch.Services.Win32;
 
 public class StartupService
 {
+    public static string? GetRegisteredPath()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", false);
+        return key?.GetValue("Sonar.AutoSwitch") as string;
+    }
+
     public static void RegisterInStartup(bool isChecked)
     {
         RegistryKey registryKey = Registry.CurrentUser.OpenSubKey

@@ -32,6 +32,9 @@ public class App : Application
                 StateManager.Instance.SaveState<SettingsViewModel>();
         }
 
+        var homeViewModel = StateManager.Instance.GetOrLoadState<HomeViewModel>();
+        ((AppViewModel)DataContext!).WireTooltip(homeViewModel, settingsViewModel);
+
         if (settingsViewModel.Enabled)
             AutoSwitchService.Instance.ToggleEnabled(settingsViewModel.Enabled);
         if (firstLoad && settingsViewModel.StartAtStartup)

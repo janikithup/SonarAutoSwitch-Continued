@@ -19,7 +19,7 @@
             </ui:SettingsExpander.Footer>
         </ui:SettingsExpander>
         <ui:SettingsExpander IconSource="RotateClockwise" Header="Start at startup" IsExpanded="True"
-                             Description="Start at Sonar Auto Switch with Windows"
+                             Description="{Binding StartupDescription}"
                              IsClickEnabled="False">
             <ui:SettingsExpander.Footer>
                 <ToggleSwitch IsChecked="{Binding StartAtStartup}" />
