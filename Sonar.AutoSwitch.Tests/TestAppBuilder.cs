@@ -11,7 +11,8 @@ public class TestAppBuilder
 {
     public static AppBuilder BuildAvaloniaApp() =>
         AppBuilder.Configure<Application>()
-            .UseHeadless(new AvaloniaHeadlessPlatformOptions())
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = true })
+            .UseSkia()
             .AfterSetup(_ =>
             {
                 Application.Current!.Styles.Add(new FluentAvaloniaTheme());
