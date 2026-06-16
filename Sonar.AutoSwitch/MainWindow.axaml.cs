@@ -30,9 +30,13 @@ public partial class MainWindow : Window
         }
         else
         {
-            if (App.Current?.ApplicationLifetime is
-                Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
-                desktop.Shutdown();
+            // ponytail: Post avoids re-entering OnClosing when Shutdown() closes this window.
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (Avalonia.Application.Current?.ApplicationLifetime is
+                    Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+                    desktop.Shutdown();
+            });
         }
     }
 
