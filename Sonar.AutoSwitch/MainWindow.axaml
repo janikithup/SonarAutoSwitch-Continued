@@ -26,7 +26,7 @@
                 </StackPanel>
             </Button>
         </ui:NavigationView.PaneFooter>
-        <ScrollViewer Padding="8">
+        <ScrollViewer Name="MainScrollViewer" Padding="8">
             <ui:Frame Name="FrameView" />
         </ScrollViewer>
     </ui:NavigationView>

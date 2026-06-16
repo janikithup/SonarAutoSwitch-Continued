@@ -1,6 +1,7 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using FluentAvalonia.UI.Controls;
 using Sonar.AutoSwitch.Pages;
 using Sonar.AutoSwitch.Services;
@@ -42,5 +43,9 @@ public partial class MainWindow : Window
         StateManager.Instance.GetOrLoadState<HomeViewModel>().AddAutoSwitchProfile();
         if (_frameView.CurrentSourcePageType != typeof(Home))
             _frameView.Navigate(typeof(Home));
+        // Scroll after layout so the new (last) profile is visible
+        Dispatcher.UIThread.Post(
+            () => this.FindControl<ScrollViewer>("MainScrollViewer")?.ScrollToEnd(),
+            DispatcherPriority.Loaded);
     }
 }

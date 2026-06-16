@@ -184,16 +184,45 @@ public class UIExplorationTest : IDisposable
         Assert.True(after > before, $"Group count did not increase after Add: before={before}, after={after}");
 
         ShotWindow("add-profile-result");
+        CleanupNewProfile();
+    }
 
-        // Clean up: delete the new profile so state is not polluted between test runs
-        var deleteBtn = _window.FindFirstDescendant(cf =>
-            cf.ByName("Delete profile").And(cf.ByControlType(ControlType.Button)))?.AsButton();
-        deleteBtn?.Click();
-        Thread.Sleep(200);
-        var confirmBtn = _window.FindFirstDescendant(cf =>
-            cf.ByName("Yes, delete").And(cf.ByControlType(ControlType.Button)))?.AsButton();
-        confirmBtn?.Click();
-        Thread.Sleep(200);
+    // Bug regression: new profile added off-screen with no scroll (B6).
+    // After Add, the new profile (IsExpanded=true) must be visible in the window viewport.
+    [Fact]
+    public void Add_profile_scrolls_new_profile_into_view()
+    {
+        var addBtn = _window.FindFirstDescendant(cf =>
+            cf.ByName("Add profile").And(cf.ByControlType(ControlType.Button)))?.AsButton();
+        Assert.NotNull(addBtn);
+        addBtn!.Click();
+        Thread.Sleep(500);
+
+        var expandedGroup = FindExpandedGroup();
+        ShotWindow("add-profile-scrolled");
+
+        Assert.NotNull(expandedGroup);
+        Assert.False(expandedGroup!.IsOffscreen,
+            "New profile is off-screen — window did not scroll it into view after Add.");
+
+        CleanupNewProfile();
+    }
+
+    // Regression: ExpanderHeader toggle button must report the profile name, not the TextBlock class name.
+    [Fact]
+    public void Expander_header_button_has_profile_name()
+    {
+        var groups = _window.FindAllDescendants(cf => cf.ByControlType(ControlType.Group));
+        Assert.True(groups.Length > 0, "No groups found");
+
+        var headerBtn = groups[0].FindFirstDescendant(cf =>
+            cf.ByAutomationId("ExpanderHeader").And(cf.ByControlType(ControlType.Button)));
+        Assert.NotNull(headerBtn);
+
+        var name = Safe(() => headerBtn!.Name);
+        _out.WriteLine($"ExpanderHeader button name: '{name}'");
+        Assert.NotEmpty(name);
+        Assert.NotEqual("Avalonia.Controls.TextBlock", name);
     }
 
     [Fact]
@@ -232,6 +261,19 @@ public class UIExplorationTest : IDisposable
     }
 
     [DllImport("user32.dll")] private static extern IntPtr SetThreadDpiAwarenessContext(IntPtr ctx);
+
+    private void CleanupNewProfile()
+    {
+        Thread.Sleep(200);
+        var deleteBtn = _window.FindFirstDescendant(cf =>
+            cf.ByName("Delete profile").And(cf.ByControlType(ControlType.Button)))?.AsButton();
+        deleteBtn?.Click();
+        Thread.Sleep(200);
+        var confirmBtn = _window.FindFirstDescendant(cf =>
+            cf.ByName("Yes, delete").And(cf.ByControlType(ControlType.Button)))?.AsButton();
+        confirmBtn?.Click();
+        Thread.Sleep(200);
+    }
 
     private AutomationElement? FindExpandedGroup()
     {

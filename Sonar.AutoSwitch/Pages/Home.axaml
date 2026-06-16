@@ -9,6 +9,13 @@
              x:Class="Sonar.AutoSwitch.Pages.Home"
              x:CompileBindings="True"
              x:DataType="viewModels:HomeViewModel">
+    <UserControl.Styles>
+        <!-- ExpanderHeader toggle button must carry the profile name for screen readers. -->
+        <Style Selector="Expander /template/ ToggleButton#ExpanderHeader">
+            <Setter Property="AutomationProperties.Name"
+                    Value="{Binding $parent[Expander].(AutomationProperties.Name)}" />
+        </Style>
+    </UserControl.Styles>
     <DockPanel>
         <TextBlock DockPanel.Dock="Top" Text="Auto Switch Profiles" Margin="0,0,0,8"
                    Theme="{StaticResource SubtitleTextBlockStyle}" />
@@ -37,7 +44,8 @@
                               Margin="0,1"
                               AutomationProperties.Name="{Binding DisplayName}">
                         <Expander.Header>
-                            <TextBlock Text="{Binding DisplayName}" />
+                            <TextBlock Text="{Binding DisplayName}"
+                                       AutomationProperties.Name="{Binding DisplayName}" />
                         </Expander.Header>
 
                         <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto"
