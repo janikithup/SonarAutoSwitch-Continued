@@ -1,8 +1,14 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Sonar.AutoSwitch.Pages.About">
-    <TextBlock Text="This is not an official software.&#x0a;Last tested with GG version 27.1.0.&#x0a;Enjoy :)" />
+    <StackPanel Spacing="4">
+        <TextBlock x:Name="VersionText" />
+        <TextBlock Text="Compatible with SteelSeries GG 52.x" />
+        <TextBlock Text="Not an official SteelSeries product." />
+        <HyperlinkButton Content="github.com/janikithup/SonarAutoSwitch-Continued"
+                         NavigateUri="https://github.com/janikithup/SonarAutoSwitch-Continued" />
+    </StackPanel>
 </UserControl>

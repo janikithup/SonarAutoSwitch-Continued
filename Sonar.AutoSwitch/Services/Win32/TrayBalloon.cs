@@ -44,7 +44,7 @@ static class TrayBalloon
     static extern bool DestroyIcon(IntPtr hIcon);
 
     const uint NIM_ADD = 0, NIM_MODIFY = 1, NIM_DELETE = 2, NIM_SETVERSION = 4;
-    const uint NIF_MESSAGE = 1, NIF_ICON = 2, NIF_TIP = 4, NIF_STATE = 8, NIF_INFO = 0x10;
+    const uint NIF_ICON = 2, NIF_TIP = 4, NIF_STATE = 8, NIF_INFO = 0x10;
     const uint NIS_HIDDEN = 1;
     const uint NIIF_INFO = 1;
     const uint NOTIFYICON_VERSION_4 = 4;
@@ -76,7 +76,7 @@ static class TrayBalloon
             hWnd = hwnd,
             uID = 1,
             // ponytail: NIS_HIDDEN keeps icon in overflow area; avoids duplicate in main tray strip.
-            uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_STATE,
+            uFlags = NIF_ICON | NIF_TIP | NIF_STATE,
             dwState = NIS_HIDDEN,
             dwStateMask = NIS_HIDDEN,
             hIcon = hIcon,
@@ -103,9 +103,6 @@ static class TrayBalloon
                 cbSize = (uint)Marshal.SizeOf<NOTIFYICONDATA>(),
                 hWnd = hwnd,
                 uID = 1,
-                szTip = "",
-                szInfo = "",
-                szInfoTitle = "",
             };
             Shell_NotifyIcon(NIM_DELETE, ref del);
             if (hIcon != IntPtr.Zero) DestroyIcon(hIcon);
