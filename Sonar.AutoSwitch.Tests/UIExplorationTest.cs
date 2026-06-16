@@ -1,6 +1,4 @@
 using System;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -109,7 +107,9 @@ public class UIExplorationTest : IDisposable
         cancelBtn?.Click();
         Thread.Sleep(200);
 
-        // 4. Type in exe field — use Capture.Screen() because dropdown is a popup window
+        // 4. Type in exe field — FlaUI sends REAL keystrokes to the OS.
+        //    Do NOT run this test while holding modifier keys (Win, Alt, Ctrl).
+        //    Use Capture.Screen() here because the dropdown is a separate popup window.
         var exeEdit = _window.FindFirstDescendant(cf => cf.ByName("Game executable name"))
                       ?.FindFirstDescendant(cf => cf.ByAutomationId("PART_TextBox"))
                       ?.AsTextBox()
@@ -119,10 +119,15 @@ public class UIExplorationTest : IDisposable
         {
             exeEdit.Click();
             Thread.Sleep(200);
-            exeEdit.Enter("explorer");
+            exeEdit.Enter("dwm"); // dwm.exe is always running; avoids accidental Win+key combos
             Thread.Sleep(700);
-            ShotScreen("5-autocomplete-dropdown"); // screen capture includes popup
+            ShotScreen("5-autocomplete-dropdown");
+            // Clear by selecting all and deleting — exeEdit.Enter("") only appends on some builds
+            exeEdit.Focus();
+            exeEdit.Select(0, 100);
+            Thread.Sleep(100);
             exeEdit.Enter("");
+            Thread.Sleep(100);
         }
 
         _out.WriteLine($"Screenshots saved to {OutDir}");
@@ -140,20 +145,20 @@ public class UIExplorationTest : IDisposable
         File.WriteAllText(Path.Combine(OutDir, "tree.txt"), result);
     }
 
-    // PrintWindow captures the window at its physical rendered size directly from the HWND.
-    // This avoids all DPI coordinate-system mismatches between Avalonia's UIA bounds and GDI.
+    // The test host (testhost.exe) controls process DPI awareness, not app.manifest.
+    // SetThreadDpiAwarenessContext(-4 = PER_MONITOR_AWARE_V2) makes UIA return physical
+    // pixel coords AND makes GDI BitBlt use physical coords on this thread — so they match.
     private void ShotWindow(string name)
     {
-        var hwnd = new IntPtr(_window.Properties.NativeWindowHandle.Value);
-        GetWindowRect(hwnd, out var r);
-        int w = r.Right - r.Left, h = r.Bottom - r.Top;
-        using var bmp = new Bitmap(w, h);
-        using var g = Graphics.FromImage(bmp);
-        var hdc = g.GetHdc();
-        try { PrintWindow(hwnd, hdc, 2 /* PW_RENDERFULLCONTENT */); }
-        finally { g.ReleaseHdc(hdc); }
-        bmp.Save(Path.Combine(OutDir, $"{name}.png"), ImageFormat.Png);
-        _out.WriteLine($"Shot (window): {name}.png");
+        var prev = SetThreadDpiAwarenessContext(new IntPtr(-4));
+        try
+        {
+            var path = Path.Combine(OutDir, $"{name}.png");
+            Capture.Element(_window).ToFile(path);
+            var r = _window.BoundingRectangle;
+            _out.WriteLine($"Shot: {name}.png  bounds=[{r.X},{r.Y} {r.Width}x{r.Height}]");
+        }
+        finally { SetThreadDpiAwarenessContext(prev); }
     }
 
     private void ShotScreen(string name)
@@ -163,11 +168,7 @@ public class UIExplorationTest : IDisposable
         _out.WriteLine($"Shot (screen): {name}.png");
     }
 
-    [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hWnd, out WinRect r);
-    [DllImport("user32.dll")] private static extern bool PrintWindow(IntPtr hWnd, IntPtr hDC, uint f);
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct WinRect { public int Left, Top, Right, Bottom; }
+    [DllImport("user32.dll")] private static extern IntPtr SetThreadDpiAwarenessContext(IntPtr ctx);
 
     private AutomationElement? FindExpandedGroup()
     {
