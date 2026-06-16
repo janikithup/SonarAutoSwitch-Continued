@@ -1,3 +1,3 @@
 ﻿namespace Sonar.AutoSwitch.Services;
 
-public record WindowInfo(string? ExeName, string Title);
+public record WindowInfo(string? ExeName, string? ExePath, string Title);

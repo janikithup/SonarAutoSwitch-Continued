@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 using Avalonia.Interactivity;
@@ -115,21 +117,29 @@ public class SettingsPageSmokeTest
     }
 
     [AvaloniaFact]
-    public void Settings_open_log_click_does_not_crash()
+    public void Settings_open_log_click_shows_no_log_message_when_file_absent()
     {
-        var (_, settings) = CreateWindow();
-
-        var updateStatus = settings.FindControl<TextBlock>("UpdateStatus")!;
-        Assert.NotNull(updateStatus);
-
-        var btn = settings.GetVisualDescendants().OfType<Button>()
-            .First(b => b.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)?.ToString() == "Open log file");
-
-        // Does not throw regardless of whether log file exists on this machine.
-        btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        settings.UpdateLayout();
-
-        // If file is absent, status says so. If present, status stays empty (file opens externally).
-        Assert.True(updateStatus.Text is null or "" or "No log file yet.");
+        // Move the real log file away so the handler takes the "no file" branch
+        // and never calls Process.Start (which would open Notepad during tests).
+        var logPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Sonar.AutoSwitch", "debug.log");
+        var temp = logPath + ".test_hide";
+        bool moved = File.Exists(logPath);
+        if (moved) File.Move(logPath, temp);
+        try
+        {
+            var (_, settings) = CreateWindow();
+            var updateStatus = settings.FindControl<TextBlock>("UpdateStatus")!;
+            var btn = settings.GetVisualDescendants().OfType<Button>()
+                .First(b => b.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)?.ToString() == "Open log file");
+            btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            settings.UpdateLayout();
+            Assert.Equal("No log file yet.", updateStatus.Text);
+        }
+        finally
+        {
+            if (moved) File.Move(temp, logPath, overwrite: true);
+        }
     }
 }

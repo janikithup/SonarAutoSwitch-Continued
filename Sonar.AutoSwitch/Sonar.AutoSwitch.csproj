@@ -8,10 +8,13 @@
         <PublishSingleFile>true</PublishSingleFile>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
-        <Version>2.7.0</Version>
+        <Version>2.9.0</Version>
     </PropertyGroup>
     <ItemGroup>
         <None Remove=".gitignore" />
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Sonar.AutoSwitch.Tests</_Parameter1>
+    </AssemblyAttribute>
     </ItemGroup>
     <ItemGroup>
         <AvaloniaResource Include="Assets\**" />

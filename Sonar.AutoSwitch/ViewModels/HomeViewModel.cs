@@ -22,7 +22,23 @@ public class HomeViewModel : ViewModelBase
     private int _sortDirection; // 0 = manual order, 1 = A→Z, -1 = Z→A
 
     public static IReadOnlyList<string> ProcessNames { get; } =
-        Process.GetProcesses().Select(p => { var n = p.ProcessName; p.Dispose(); return n; }).Distinct().OrderBy(x => x).ToList();
+        Process.GetProcesses()
+            .Select(p =>
+            {
+                try
+                {
+                    var path = p.MainModule?.FileName;
+                    var name = p.ProcessName;
+                    p.Dispose();
+                    // Filter system processes: null path or path can't be read → system process.
+                    return path != null && !RecentWindowsService.IsSystemExePath(path) ? name : null;
+                }
+                catch { p.Dispose(); return null; }
+            })
+            .OfType<string>()
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
 
     public HomeViewModel()
     {

@@ -25,10 +25,11 @@ public class HomePageSmokeTest
         Assert.True(expanders.Count > 0, "No Expanders found — accordion not rendered");
         Assert.True(expanders.All(e => !e.IsExpanded), "Profiles should all be collapsed on load");
 
-        // Regression: Header must show profile name.
-        var header = expanders[0].Header as TextBlock;
-        Assert.NotNull(header);
-        Assert.False(string.IsNullOrWhiteSpace(header!.Text), "Profile header text is empty — binding broken");
+        // Regression: Header is a StackPanel; first TextBlock must show the profile name.
+        var headerPanel = expanders[0].Header as StackPanel;
+        Assert.NotNull(headerPanel);
+        var nameText = headerPanel!.Children.OfType<TextBlock>().First();
+        Assert.False(string.IsNullOrWhiteSpace(nameText.Text), "Profile header text is empty — binding broken");
     }
 
     [AvaloniaFact]

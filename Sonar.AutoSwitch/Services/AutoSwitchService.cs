@@ -65,6 +65,8 @@ public class AutoSwitchService
             if (string.Equals(windowExeName, "explorer", StringComparison.OrdinalIgnoreCase))
                 return;
 
+            RecentWindowsService.AddWindow(windowExeName, e.Title, e.ExePath);
+
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = new CancellationTokenSource();

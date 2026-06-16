@@ -54,23 +54,29 @@ public class Win32WindowEventManager
     private void WindowEventCallback(nint hWinEventHook, uint eventType, nint hwnd, int idObject,
         int idChild, uint dwEventThread, uint dwmsEventTime)
     {
+        // Tool windows (tray flyouts, notification popups) are never game windows
+        if ((GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64() & WS_EX_TOOLWINDOW) != 0)
+            return;
+
         string windowTitle = GetWindowTitle(hwnd);
         if (GetWindowThreadProcessId(hwnd, out var pid) == 0)
             return;
         string? exeName = null;
+        string? exePath = null;
         try
         {
             using var processById = Process.GetProcessById((int) pid);
             string? fileName = processById.MainModule?.FileName;
             if (string.IsNullOrEmpty(fileName))
                 return;
+            exePath = fileName;
             exeName = Path.GetFileNameWithoutExtension(fileName);
         }
         catch (Exception)
         {
             // ignored
         }
-        OnForegroundWindowChanged(new WindowInfo(exeName, windowTitle));
+        OnForegroundWindowChanged(new WindowInfo(exeName, exePath, windowTitle));
     }
 
 
@@ -106,6 +112,12 @@ public class Win32WindowEventManager
 
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
+    private static extern nint GetWindowLongPtr(nint hWnd, int nIndex);
+
+    private const int GWL_EXSTYLE = -20;
+    private const long WS_EX_TOOLWINDOW = 0x80;
 
     private const int WINEVENT_OUTOFCONTEXT = 0;
     private const int WINEVENT_SKIPOWNPROCESS = 2;
