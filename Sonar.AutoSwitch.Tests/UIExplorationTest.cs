@@ -137,18 +137,16 @@ public class UIExplorationTest : IDisposable
         File.WriteAllText(Path.Combine(OutDir, "tree.txt"), result);
     }
 
-    private void ShotWindow(string name)
-    {
-        var path = Path.Combine(OutDir, $"{name}.png");
-        Capture.Element(_window).ToFile(path);
-        _out.WriteLine($"Shot (window): {path}");
-    }
+    // Avalonia reports UIA bounding rects in logical pixels; Capture.Element() captures
+    // that logical-sized region at physical scale, clipping ~20% at 125% DPI.
+    // Capture.Screen() is DPI-agnostic and always shows the full window.
+    private void ShotWindow(string name) => ShotScreen(name);
 
     private void ShotScreen(string name)
     {
         var path = Path.Combine(OutDir, $"{name}.png");
         Capture.Screen().ToFile(path);
-        _out.WriteLine($"Shot (screen): {path}");
+        _out.WriteLine($"Shot: {path}");
     }
 
     private AutomationElement? FindExpandedGroup()
