@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.LogicalTree;
@@ -22,16 +20,19 @@ public partial class Home : UserControl
 
         _exeBox = this.GetLogicalDescendants().OfType<AutoCompleteBox>().FirstOrDefault();
         var names = Process.GetProcesses().Select(p => p.ProcessName).Distinct().OrderBy(x => x).ToList();
-        Log($"ExeNameBox={_exeBox != null}, ProcessNames={names.Count}");
 
         if (_exeBox != null)
         {
             _exeBox.ItemsSource = names;
-            // Select-all via the template's inner TextBox so typing replaces the current value
+            // Select-all via the template's inner TextBox so typing replaces the current value.
+            // Guard against TemplateApplied re-fires (theme change) subscribing GotFocus twice.
+            TextBox? innerTb = null;
             _exeBox.TemplateApplied += (_, e) =>
             {
-                if (e.NameScope.Find<TextBox>("PART_TextBox") is { } tb)
-                    tb.GotFocus += (_, _) => tb.SelectAll();
+                var tb = e.NameScope.Find<TextBox>("PART_TextBox");
+                if (tb == null || tb == innerTb) return;
+                innerTb = tb;
+                innerTb.GotFocus += (_, _) => innerTb.SelectAll();
             };
         }
 
@@ -64,13 +65,6 @@ public partial class Home : UserControl
         _exeBox.Text = value ?? "";
         _syncing = false;
     }
-
-    private static void Log(string msg) =>
-        File.AppendAllText(
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Sonar.AutoSwitch", "debug.log"),
-            $"{DateTime.Now:HH:mm:ss} [Home] {msg}\n");
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 }

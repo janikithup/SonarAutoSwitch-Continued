@@ -62,7 +62,8 @@
                 </StackPanel>
                 <AutoCompleteBox x:Name="ExeNameBox" Grid.Row="0" Grid.Column="1"
                                 VerticalAlignment="Top" Watermark="The name of the executable, e.g. Overwatch"
-                                FilterMode="Contains" MinimumPrefixLength="1" />
+                                FilterMode="Contains" MinimumPrefixLength="1"
+                                MaxDropDownHeight="200" />
 
                 <StackPanel Grid.Row="1" Grid.Column="0">
                     <TextBlock Text="Window title: " VerticalAlignment="Top" Margin="0,0,2,0" />

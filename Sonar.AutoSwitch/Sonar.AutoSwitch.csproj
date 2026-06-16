@@ -3,31 +3,18 @@
         <OutputType>WinExe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
-        <PublishTrimmed>true</PublishTrimmed>
+        <PublishTrimmed>false</PublishTrimmed>
         <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-        <!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
-        <TrimMode>copyused</TrimMode>
-        <_TrimmerDefaultAction>copy</_TrimmerDefaultAction>
         <PublishSingleFile>true</PublishSingleFile>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
-        <Version>52.3.0</Version>
+        <Version>52.3.1</Version>
     </PropertyGroup>
     <ItemGroup>
         <None Remove=".gitignore" />
     </ItemGroup>
     <ItemGroup>
         <AvaloniaResource Include="Assets\**" />
-    </ItemGroup>
-    <ItemGroup>
-        <!--This helps with theme dll-s trimming.
-        If you will publish your application in self-contained mode with p:PublishTrimmed=true and it will use Fluent theme Default theme will be trimmed from the output and vice versa.
-        https://github.com/AvaloniaUI/Avalonia/issues/5593 -->
-        <TrimmableAssembly Include="Avalonia.Themes.Fluent" />
-        <TrimmableAssembly Include="Avalonia.Themes.Default" />
-        <TrimmableAssembly Include="Microsoft.Win32.Registry" />
-        <TrimmableAssembly Include="FluentAvaloniaUI" />
-        <TrimmableAssembly Include="FluentAvalonia" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="11.3.17" />
@@ -39,7 +26,7 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Update="Pages\Home.axaml.cs">
-            <DependentUpon>Settings.axaml</DependentUpon>
+            <DependentUpon>Home.axaml</DependentUpon>
             <SubType>Code</SubType>
         </Compile>
     </ItemGroup>

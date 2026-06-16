@@ -51,67 +51,74 @@ public class AutoSwitchService
 
     private async void InstanceOnForegroundWindowChanged(object? sender, WindowInfo e)
     {
-        string? windowExeName = e.ExeName;
-        Log($"ForegroundChanged: exe={windowExeName} title={e.Title}");
-
-        if (string.Equals(windowExeName, "explorer", StringComparison.OrdinalIgnoreCase))
-            return;
-
-        _cancellationTokenSource?.Cancel();
-        _cancellationTokenSource?.Dispose();
-        _cancellationTokenSource = new CancellationTokenSource();
-        await _semaphoreSlim.WaitAsync();
         try
         {
-            IEnumerable<AutoSwitchProfileViewModel> autoSwitchProfileViewModels = _homeViewModel.AutoSwitchProfiles;
-            if (StateManager.Instance.GetOrLoadState<SettingsViewModel>().UseGithubConfigs)
-            {
-                autoSwitchProfileViewModels =
-                    autoSwitchProfileViewModels.Concat(AutoSwitchProfilesDatabase.Instance.GithubProfiles);
-            }
+            string? windowExeName = e.ExeName;
+            Log($"ForegroundChanged: exe={windowExeName} title={e.Title}");
 
-            AutoSwitchProfileViewModel? autoSwitchProfileViewModel =
-                autoSwitchProfileViewModels.FirstOrDefault(p =>
-                    (string.IsNullOrEmpty(p.ExeName) ||
-                     string.Equals(p.ExeName, windowExeName, StringComparison.OrdinalIgnoreCase)) &&
-                    (string.IsNullOrEmpty(p.Title) || e.Title.Contains(p.Title, StringComparison.OrdinalIgnoreCase)));
-            SonarGamingConfiguration? sonarGamingConfiguration = autoSwitchProfileViewModel?.SonarGamingConfiguration;
-            sonarGamingConfiguration ??= _homeViewModel.DefaultSonarGamingConfiguration;
-            Log($"Matched profile: {autoSwitchProfileViewModel?.Title ?? "(none→default)"} → config={sonarGamingConfiguration?.Name} id={sonarGamingConfiguration?.Id}");
-
-            _homeViewModel.ActiveProfile = sonarGamingConfiguration;
-
-            if (string.IsNullOrEmpty(sonarGamingConfiguration.Id) ||
-                _selectedGamingConfiguration == sonarGamingConfiguration)
-            {
-                Log($"Early return: id empty={string.IsNullOrEmpty(sonarGamingConfiguration.Id)} sameConfig={_selectedGamingConfiguration == sonarGamingConfiguration}");
+            if (string.Equals(windowExeName, "explorer", StringComparison.OrdinalIgnoreCase))
                 return;
-            }
 
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = new CancellationTokenSource();
+            await _semaphoreSlim.WaitAsync();
             try
             {
-                string selectedGamingConfigurationId =
-                    SteelSeriesSonarService.Instance.GetSelectedGamingConfiguration();
-                Log($"Current Sonar config: {selectedGamingConfigurationId}");
-                _selectedGamingConfiguration = sonarGamingConfiguration;
-                if (sonarGamingConfiguration.Id == selectedGamingConfigurationId)
+                IEnumerable<AutoSwitchProfileViewModel> autoSwitchProfileViewModels = _homeViewModel.AutoSwitchProfiles;
+                if (StateManager.Instance.GetOrLoadState<SettingsViewModel>().UseGithubConfigs)
                 {
-                    Log("Already on correct config, skipping");
+                    autoSwitchProfileViewModels =
+                        autoSwitchProfileViewModels.Concat(AutoSwitchProfilesDatabase.Instance.GithubProfiles);
+                }
+
+                AutoSwitchProfileViewModel? autoSwitchProfileViewModel =
+                    autoSwitchProfileViewModels.FirstOrDefault(p =>
+                        (string.IsNullOrEmpty(p.ExeName) ||
+                         string.Equals(p.ExeName, windowExeName, StringComparison.OrdinalIgnoreCase)) &&
+                        (string.IsNullOrEmpty(p.Title) || e.Title.Contains(p.Title, StringComparison.OrdinalIgnoreCase)));
+                SonarGamingConfiguration? sonarGamingConfiguration = autoSwitchProfileViewModel?.SonarGamingConfiguration;
+                sonarGamingConfiguration ??= _homeViewModel.DefaultSonarGamingConfiguration;
+                Log($"Matched profile: {autoSwitchProfileViewModel?.Title ?? "(none→default)"} → config={sonarGamingConfiguration?.Name} id={sonarGamingConfiguration?.Id}");
+
+                _homeViewModel.ActiveProfile = sonarGamingConfiguration;
+
+                if (string.IsNullOrEmpty(sonarGamingConfiguration.Id) ||
+                    _selectedGamingConfiguration == sonarGamingConfiguration)
+                {
+                    Log($"Early return: id empty={string.IsNullOrEmpty(sonarGamingConfiguration.Id)} sameConfig={_selectedGamingConfiguration == sonarGamingConfiguration}");
                     return;
                 }
-                Log($"Switching to {sonarGamingConfiguration.Name}...");
-                await SteelSeriesSonarService.Instance.ChangeSelectedGamingConfiguration(sonarGamingConfiguration,
-                    _cancellationTokenSource.Token);
-                Log("Switch complete");
+
+                try
+                {
+                    string selectedGamingConfigurationId =
+                        SteelSeriesSonarService.Instance.GetSelectedGamingConfiguration();
+                    Log($"Current Sonar config: {selectedGamingConfigurationId}");
+                    _selectedGamingConfiguration = sonarGamingConfiguration;
+                    if (sonarGamingConfiguration.Id == selectedGamingConfigurationId)
+                    {
+                        Log("Already on correct config, skipping");
+                        return;
+                    }
+                    Log($"Switching to {sonarGamingConfiguration.Name}...");
+                    await SteelSeriesSonarService.Instance.ChangeSelectedGamingConfiguration(sonarGamingConfiguration,
+                        _cancellationTokenSource.Token);
+                    Log("Switch complete");
+                }
+                catch (Exception ex)
+                {
+                    Log($"ERROR: {ex.GetType().Name}: {ex.Message}");
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                Log($"ERROR: {ex.GetType().Name}: {ex.Message}");
+                _semaphoreSlim.Release();
             }
         }
-        finally
+        catch (Exception ex)
         {
-            _semaphoreSlim.Release();
+            Log($"UNHANDLED in ForegroundWindowChanged: {ex.GetType().Name}: {ex.Message}");
         }
     }
 }
