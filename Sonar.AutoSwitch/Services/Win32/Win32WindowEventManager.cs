@@ -46,6 +46,15 @@ public class Win32WindowEventManager
         _windowEventHook = IntPtr.Zero;
     }
 
+    // U8: fire a synthetic foreground event for whatever window is in front right now.
+    // Lets AutoSwitchService switch on enable without waiting for the user to alt-tab.
+    public void FireCurrentForeground()
+    {
+        var hwnd = GetForegroundWindow();
+        if (hwnd == IntPtr.Zero) return;
+        WindowEventCallback(IntPtr.Zero, EVENT_SYSTEM_FOREGROUND, hwnd, 0, 0, 0, 0);
+    }
+
     public event EventHandler<WindowInfo>? ForegroundWindowChanged;
 
     protected virtual void OnForegroundWindowChanged(WindowInfo e)
@@ -103,6 +112,9 @@ public class Win32WindowEventManager
 
     private delegate void WinEventProc(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild,
         uint dwEventThread, uint dwmsEventTime);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern IntPtr SetWinEventHook(int eventMin, int eventMax, IntPtr hmodWinEventProc,

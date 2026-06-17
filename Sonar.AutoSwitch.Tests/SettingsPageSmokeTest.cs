@@ -125,6 +125,38 @@ public class SettingsPageSmokeTest
     }
 
     [AvaloniaFact]
+    public void Settings_reset_cancel_hides_confirm_panel()
+    {
+        var (_, settings) = CreateWindow();
+
+        var confirmPanel = settings.FindControl<StackPanel>("ResetConfirmPanel")!;
+        var resetBtn = settings.GetVisualDescendants().OfType<Button>()
+            .First(b => b.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)?.ToString() == "Reset to defaults");
+        resetBtn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        settings.UpdateLayout();
+        Assert.True(confirmPanel.IsVisible, "Confirm panel should be visible after Reset click");
+
+        var cancelBtn = settings.GetVisualDescendants().OfType<Button>()
+            .First(b => b.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)?.ToString() == "Cancel reset");
+        cancelBtn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        settings.UpdateLayout();
+
+        Assert.False(confirmPanel.IsVisible, "Confirm panel should hide after Cancel");
+    }
+
+    [AvaloniaFact]
+    public void Settings_copy_version_does_not_crash()
+    {
+        var (window, settings) = CreateWindow();
+
+        var btn = settings.GetVisualDescendants().OfType<Button>()
+            .First(b => b.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)?.ToString() == "Copy version");
+        btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        window.UpdateLayout();
+        // Clipboard may be null in headless — handler must not crash.
+    }
+
+    [AvaloniaFact]
     public void Settings_open_log_click_shows_no_log_message_when_file_absent()
     {
         // Move the real log file away so the handler takes the "no file" branch

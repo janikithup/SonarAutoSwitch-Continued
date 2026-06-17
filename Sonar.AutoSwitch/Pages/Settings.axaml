@@ -112,8 +112,10 @@
                     Spacing="8" Margin="0,4,0,0">
             <TextBlock Text="Delete all profiles and settings?" VerticalAlignment="Center" Opacity="0.8" />
             <Button Content="Yes, reset everything" Click="ResetConfirm_Click"
-                    Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
-            <Button Content="Cancel" Click="ResetCancel_Click" />
+                    Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                    AutomationProperties.Name="Confirm reset" />
+            <Button Content="Cancel" Click="ResetCancel_Click"
+                    AutomationProperties.Name="Cancel reset" />
         </StackPanel>
 
         <Rectangle Height="1" Fill="{DynamicResource CardStrokeColorDefaultBrush}" Margin="0,6,0,2" />

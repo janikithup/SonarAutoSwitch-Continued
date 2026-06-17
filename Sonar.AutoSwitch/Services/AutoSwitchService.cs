@@ -27,9 +27,16 @@ public class AutoSwitchService
     public void ToggleEnabled(bool enable)
     {
         if (enable)
+        {
             Win32WindowEventManager.Instance.SubscribeToWindowEvents();
+            Win32WindowEventManager.Instance.FireCurrentForeground();
+        }
         else
+        {
             Win32WindowEventManager.Instance.UnsubscribeToWindowsEvents();
+            _selectedGamingConfiguration = default!;
+            _homeViewModel.SonarStatus = SonarConnectionStatus.Idle;
+        }
     }
 
     private static readonly string LogPath = Path.Combine(
