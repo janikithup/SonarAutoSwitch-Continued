@@ -23,7 +23,6 @@ public class HomeViewModel : ViewModelBase
     private SonarConnectionStatus _sonarStatus = SonarConnectionStatus.Idle;
     // Search + sort: ephemeral view state, not persisted to JSON.
     private string _searchText = string.Empty;
-    private int _sortDirection; // 0 = manual order, 1 = A→Z, -1 = Z→A
     // Audio peak — ephemeral, drives EQ bar heights.
     private double _audioPeak;
     private bool _isDemo;
@@ -202,43 +201,15 @@ public class HomeViewModel : ViewModelBase
     {
         get
         {
-            IEnumerable<AutoSwitchProfileViewModel> source = _sortDirection switch
-            {
-                1  => _autoSwitchProfiles.OrderBy(p => p.DisplayName, StringComparer.CurrentCultureIgnoreCase),
-                -1 => _autoSwitchProfiles.OrderByDescending(p => p.DisplayName, StringComparer.CurrentCultureIgnoreCase),
-                2  => _autoSwitchProfiles.OrderByDescending(p => p.CreatedAt ?? DateTime.MinValue),
-                -2 => _autoSwitchProfiles.OrderBy(p => p.CreatedAt ?? DateTime.MaxValue),
-                _  => _autoSwitchProfiles
-            };
             if (string.IsNullOrWhiteSpace(_searchText))
-                return source is ObservableCollection<AutoSwitchProfileViewModel> ? source : source.ToList();
+                return _autoSwitchProfiles;
             var term = _searchText.Trim();
-            return source.Where(p =>
+            return _autoSwitchProfiles.Where(p =>
                 p.DisplayName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                 p.ExeName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                 p.Title.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList();
         }
     }
-
-    [JsonIgnore]
-    public string SortModeLabel => _sortDirection switch
-    {
-        1  => "↑",
-        -1 => "↓",
-        2  => "⏰↓",
-        -2 => "⏰↑",
-        _  => "⇅",
-    };
-
-    [JsonIgnore]
-    public string SortModeTooltip => _sortDirection switch
-    {
-        1  => "A to Z — click for Z to A",
-        -1 => "Z to A — click for newest first",
-        2  => "Newest first — click for oldest first",
-        -2 => "Oldest first — click to unsort",
-        _  => "Unsorted — click to sort A to Z",
-    };
 
     public static HomeViewModel LoadHomeViewModel()
     {
@@ -282,15 +253,6 @@ public class HomeViewModel : ViewModelBase
         profile.IsExpanded = true;       // Accordion collapses others via OnProfilePropertyChanged
     }
 
-    public void CycleSort()
-    {
-        // 0 (initial manual) goes to 1 on first click; never cycles back to 0 after that.
-        _sortDirection = _sortDirection switch { 0 or -2 => 1, 1 => -1, -1 => 2, _ => -2 };
-        base.OnPropertyChanged(nameof(FilteredProfiles));
-        base.OnPropertyChanged(nameof(SortModeLabel));
-        base.OnPropertyChanged(nameof(SortModeTooltip));
-    }
-
     public void RemoveAutoSwitchProfile(AutoSwitchProfileViewModel profile)
     {
         AutoSwitchProfiles.Remove(profile);
@@ -317,13 +279,9 @@ public class HomeViewModel : ViewModelBase
                     p.IsExpanded = false;
             return;
         }
-        // Refresh filtered view when sort is active and a profile name changes.
         if (e.PropertyName is nameof(AutoSwitchProfileViewModel.ExeName)
                            or nameof(AutoSwitchProfileViewModel.Title))
-        {
-            if (_sortDirection != 0)
-                base.OnPropertyChanged(nameof(FilteredProfiles));
-        }
+            base.OnPropertyChanged(nameof(FilteredProfiles));
     }
 
     protected override void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -331,8 +289,6 @@ public class HomeViewModel : ViewModelBase
         base.OnPropertyChanged(propertyName);
         // ActiveProfile is ephemeral ([JsonIgnore]) and changes on every switch — notify but don't persist.
         if (propertyName is nameof(FilteredProfiles)
-                         or nameof(SortModeLabel)
-                         or nameof(SortModeTooltip)
                          or nameof(ActiveProfile)
                          or nameof(SonarStatusLabel)
                          or nameof(EqBar1) or nameof(EqBar2) or nameof(EqBar3)

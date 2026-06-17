@@ -218,7 +218,7 @@ public class AutoSwitchProfileViewModelTest
     [Fact]
     public void IsIncomplete_true_when_exeName_is_default()
     {
-        var vm = new AutoSwitchProfileViewModel(); // ExeName = "MyGame"
+        var vm = new AutoSwitchProfileViewModel(); // ExeName = "", Title = "" (blank defaults)
         Assert.True(vm.IsIncomplete);
     }
 
@@ -244,7 +244,7 @@ public class AutoSwitchProfileViewModelTest
     [Fact]
     public void StartDelete_skips_confirmation_when_profile_is_fully_default()
     {
-        var vm = new AutoSwitchProfileViewModel(); // ExeName="MyGame", SonarConfig unset
+        var vm = new AutoSwitchProfileViewModel(); // ExeName="", Title="", SonarConfig unset
         bool deleted = false;
         vm.OnDeleteConfirmed = () => deleted = true;
         vm.StartDelete();

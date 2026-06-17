@@ -9,12 +9,13 @@ public class AutoSwitchServiceMatchingTest
     private static AutoSwitchProfileViewModel Profile(string exeName, string title, bool orMode = false) =>
         new AutoSwitchProfileViewModel { ExeName = exeName, Title = title, TitleMatchOr = orMode };
 
-    // 1. Empty ExeName matches any exe
+    // 1. Empty ExeName matches any exe (as long as Title is set; both-empty is unconfigured)
     [Fact]
     public void EmptyExeName_matches_any_exe()
     {
-        var p = Profile("", "");
+        var p = Profile("", "Some Window");
         Assert.True(AutoSwitchService.ProfileMatches(p, "SomeGame", "Some Window Title"));
+        Assert.True(AutoSwitchService.ProfileMatches(p, "OtherGame", "Some Window Title"));
     }
 
     // 2. ExeName matches case-insensitively
@@ -35,12 +36,13 @@ public class AutoSwitchServiceMatchingTest
         Assert.False(AutoSwitchService.ProfileMatches(p, "OtherGame", "any title"));
     }
 
-    // 4. Empty Title matches any title
+    // 4. Empty Title matches any title (as long as ExeName is set; both-empty is unconfigured)
     [Fact]
     public void EmptyTitle_matches_any_title()
     {
-        var p = Profile("", "");
+        var p = Profile("SomeGame", "");
         Assert.True(AutoSwitchService.ProfileMatches(p, "SomeGame", "Totally Different Window"));
+        Assert.True(AutoSwitchService.ProfileMatches(p, "somegame", ""));
     }
 
     // 5. Title matches case-insensitively (Contains)
@@ -80,12 +82,13 @@ public class AutoSwitchServiceMatchingTest
         Assert.False(AutoSwitchService.ProfileMatches(p, "OtherGame", "Main Menu"));
     }
 
-    // 8. null exeName matches a profile with empty ExeName
+    // 8. Profile with both fields empty never matches (unconfigured — would be a wildcard otherwise)
     [Fact]
-    public void Null_exeName_matches_profile_with_empty_ExeName()
+    public void Both_fields_empty_never_matches()
     {
         var p = Profile("", "");
-        Assert.True(AutoSwitchService.ProfileMatches(p, null, "any title"));
+        Assert.False(AutoSwitchService.ProfileMatches(p, null, "any title"));
+        Assert.False(AutoSwitchService.ProfileMatches(p, "AnyGame", "Any Title"));
     }
 
     // 9. Profile with non-empty ExeName does NOT match null exeName
@@ -120,11 +123,11 @@ public class AutoSwitchServiceMatchingTest
         Assert.False(AutoSwitchService.ProfileMatches(p, "OtherGame", "Main Menu"));
     }
 
-    // OR mode: both fields empty → wildcard (always matches)
+    // OR mode: both fields empty → still no match (unconfigured profile guard fires before OR logic)
     [Fact]
-    public void OR_mode_both_empty_is_wildcard()
+    public void OR_mode_both_empty_never_matches()
     {
         var p = Profile("", "", orMode: true);
-        Assert.True(AutoSwitchService.ProfileMatches(p, "AnyGame", "Any Title"));
+        Assert.False(AutoSwitchService.ProfileMatches(p, "AnyGame", "Any Title"));
     }
 }

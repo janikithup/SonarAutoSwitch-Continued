@@ -67,6 +67,7 @@ public class AutoSwitchService
 
     public static bool ProfileMatches(AutoSwitchProfileViewModel p, string? exeName, string title)
     {
+        if (string.IsNullOrEmpty(p.ExeName) && string.IsNullOrEmpty(p.Title)) return false;
         bool exeOk = string.IsNullOrEmpty(p.ExeName) || string.Equals(p.ExeName, exeName, StringComparison.OrdinalIgnoreCase);
         bool titleOk = string.IsNullOrEmpty(p.Title) || title.Contains(p.Title, StringComparison.OrdinalIgnoreCase);
         if (!p.TitleMatchOr) return exeOk && titleOk;

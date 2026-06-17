@@ -10,7 +10,7 @@ namespace Sonar.AutoSwitch.ViewModels;
 
 public class AutoSwitchProfileViewModel : ViewModelBase
 {
-    private string _exeName = "MyGame";
+    private string _exeName = "";
     private string _title = "";
     private SonarGamingConfiguration _sonarGamingConfiguration = new(null, "Unset");
     private string _sonarMatchHint = "";
@@ -179,12 +179,13 @@ public class AutoSwitchProfileViewModel : ViewModelBase
     [JsonIgnore] public bool HasSonarMatchHint => _sonarMatchHint.Length > 0;
 
     [JsonIgnore]
-    public bool IsIncomplete => _exeName == "MyGame" || _sonarGamingConfiguration.Id is null;
+    public bool IsIncomplete =>
+        (string.IsNullOrEmpty(_exeName) && string.IsNullOrEmpty(_title)) || _sonarGamingConfiguration.Id is null;
 
     public void StartDelete()
     {
         // Profiles that were never configured can be removed without confirmation.
-        if (_exeName == "MyGame" && _sonarGamingConfiguration.Id is null)
+        if (string.IsNullOrEmpty(_exeName) && string.IsNullOrEmpty(_title) && _sonarGamingConfiguration.Id is null)
             ConfirmDelete();
         else
             IsConfirmingDelete = true;
@@ -193,7 +194,9 @@ public class AutoSwitchProfileViewModel : ViewModelBase
     public void CancelDelete() => IsConfirmingDelete = false;
     public void ConfirmDelete() => OnDeleteConfirmed?.Invoke();
 
-    public string DisplayName => string.IsNullOrWhiteSpace(Title) ? ExeName : Title;
+    public string DisplayName => string.IsNullOrWhiteSpace(Title)
+        ? (string.IsNullOrWhiteSpace(ExeName) ? "New profile" : ExeName)
+        : Title;
 
     protected override void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {

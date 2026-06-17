@@ -43,18 +43,6 @@ public class HomeViewModelTest
     }
 
     [Fact]
-    public void CycleSort_cycles_through_four_modes_without_returning_to_unsorted()
-    {
-        var home = new HomeViewModel();
-        Assert.Equal("⇅", home.SortModeLabel);   // initial unsorted
-        home.CycleSort(); Assert.Equal("↑",   home.SortModeLabel);
-        home.CycleSort(); Assert.Equal("↓",   home.SortModeLabel);
-        home.CycleSort(); Assert.Equal("⏰↓", home.SortModeLabel);
-        home.CycleSort(); Assert.Equal("⏰↑", home.SortModeLabel);
-        home.CycleSort(); Assert.Equal("↑",   home.SortModeLabel); // back to A→Z, not ⇅
-    }
-
-    [Fact]
     public void AddAutoSwitchProfile_stamps_CreatedAt()
     {
         var home = new HomeViewModel();
