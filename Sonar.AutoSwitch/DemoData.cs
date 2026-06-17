@@ -29,9 +29,10 @@ internal static class DemoData
         // ExeName triggers the auto-match that fills the Sonar config and the hint.
         var demos = new[]
         {
-            ("Cyberpunk 2077",   "Cyberpunk2077",   false),
+            ("Cyberpunk 2077",   "Cyberpunk2077",   true),
             ("Counter-Strike 2", "Counter-Strike2", false),
             ("Elden Ring",       "EldenRing",       false),
+            ("Baldur's Gate 3",  "BaldursGate3",    false),
         };
 
         var profiles = new ObservableCollection<AutoSwitchProfileViewModel>();
