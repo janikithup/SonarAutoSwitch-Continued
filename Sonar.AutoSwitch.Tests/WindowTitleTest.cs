@@ -29,12 +29,12 @@ public class WindowTitleTest
 
         vm.ActiveProfile = new SonarGamingConfiguration("id-1", "Competitive");
         window.UpdateLayout();
-        Assert.Equal("Sonar Auto Switch — Competitive", window.Title);
+        Assert.Equal("Sonar Auto Switch · Competitive", window.Title);
 
         // A second switch must update again — the regression was that only the first sync worked.
         vm.ActiveProfile = new SonarGamingConfiguration("id-2", "Cinematic");
         window.UpdateLayout();
-        Assert.Equal("Sonar Auto Switch — Cinematic", window.Title);
+        Assert.Equal("Sonar Auto Switch · Cinematic", window.Title);
     }
 
     [AvaloniaFact]

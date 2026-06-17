@@ -8,7 +8,8 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Sonar.AutoSwitch.Pages.Home"
              x:CompileBindings="True"
-             x:DataType="viewModels:HomeViewModel">
+             x:DataType="viewModels:HomeViewModel"
+             Focusable="True">
     <UserControl.Styles>
         <Style Selector="Expander /template/ ToggleButton#ExpanderHeader">
             <Setter Property="AutomationProperties.Name"
@@ -200,15 +201,19 @@
                                          VerticalAlignment="Center"
                                          AutomationProperties.Name="Active profile dot"
                                          ToolTip.Tip="Currently switching" />
-                                <!-- Profile name + incomplete warning -->
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
-                                    <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" />
-                                    <TextBlock Text="⚠" IsVisible="{Binding IsIncomplete}"
+                                <!-- Profile name + incomplete warning (Grid so * column constrains trimming) -->
+                                <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding DisplayName}"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="⚠" IsVisible="{Binding IsIncomplete}"
                                                Foreground="{DynamicResource SystemFillColorCautionBrush}"
-                                               FontSize="11" VerticalAlignment="Center"
+                                               FontSize="11" VerticalAlignment="Center" Margin="6,0,0,0"
                                                ToolTip.Tip="Game exe or Sonar config not set" />
-                                </StackPanel>
-                                <!-- Preset badge -->
+                                </Grid>
+                                <!-- Preset badge — capped so long config names don't overflow -->
                                 <Border Grid.Column="2"
                                         IsVisible="{Binding HasSonarConfig}"
                                         Background="{DynamicResource ControlFillColorDefaultBrush}"
@@ -217,10 +222,13 @@
                                         CornerRadius="4"
                                         Padding="6,1"
                                         Margin="6,0,0,0"
+                                        MaxWidth="90"
                                         VerticalAlignment="Center"
+                                        ToolTip.Tip="{Binding SonarGamingConfiguration.Name}"
                                         AutomationProperties.Name="Sonar config badge">
                                     <TextBlock Text="{Binding SonarGamingConfiguration.Name}"
                                                FontSize="10"
+                                               TextTrimming="CharacterEllipsis"
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                                 </Border>
                             </Grid>

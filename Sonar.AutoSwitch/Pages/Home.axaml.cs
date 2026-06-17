@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
@@ -52,7 +53,15 @@ public partial class Home : UserControl
     {
         if (TopLevel.GetTopLevel(this) is not Window w) return;
         var name = (DataContext as HomeViewModel)?.ActiveProfile?.Name;
-        w.Title = string.IsNullOrEmpty(name) ? "Sonar Auto Switch" : $"Sonar Auto Switch — {name}";
+        w.Title = string.IsNullOrEmpty(name) ? "Sonar Auto Switch" : $"Sonar Auto Switch · {name}";
+    }
+
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+        // Clear TextBox focus when clicking outside any TextBox
+        if ((e.Source as Avalonia.Visual)?.FindAncestorOfType<TextBox>(includeSelf: true) is null)
+            TopLevel.GetTopLevel(this)?.Focus();
     }
 
     private void OpenSettings_Click(object? sender, RoutedEventArgs e) =>

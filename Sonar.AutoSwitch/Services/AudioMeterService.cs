@@ -4,17 +4,12 @@ using System.Threading;
 
 namespace Sonar.AutoSwitch.Services;
 
-// COM interfaces for WASAPI peak meter — no NuGet packages required.
-
 [ComImport]
 [Guid("A95664D2-9614-4F35-A746-DE8DB63617E6")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 internal interface IMMDeviceEnumerator
 {
-    // Slot 0: EnumAudioEndpoints (not used, but must occupy slot)
     void EnumAudioEndpoints(int dataFlow, int dwStateMask, out IntPtr ppDevices);
-
-    // Slot 1: GetDefaultAudioEndpoint
     void GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice ppEndpoint);
 }
 
@@ -23,7 +18,6 @@ internal interface IMMDeviceEnumerator
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 internal interface IMMDevice
 {
-    // Slot 0: Activate
     void Activate(ref Guid iid, int dwClsCtx, IntPtr pActivationParams,
         [MarshalAs(UnmanagedType.IUnknown)] out object ppInterface);
 }
@@ -33,7 +27,6 @@ internal interface IMMDevice
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 internal interface IAudioMeterInformation
 {
-    // Slot 0: GetPeak
     void GetPeak(out float pfPeak);
 }
 
@@ -42,19 +35,21 @@ public sealed class AudioMeterService
     private static readonly Lazy<AudioMeterService> _lazy = new(() => new AudioMeterService());
     public static AudioMeterService Instance => _lazy.Value;
 
-    private IAudioMeterInformation? _meter;
+    // One meter per Windows audio role: eConsole=0, eMultimedia=1, eCommunications=2.
+    // Sonar routes different app categories to different virtual endpoints, so we
+    // poll all three and take the max — whichever role has audio playing wins.
+    private readonly IAudioMeterInformation?[] _meters = new IAudioMeterInformation?[3];
     private readonly Timer _timer;
 
     public event EventHandler<float>? PeakChanged;
 
     private AudioMeterService()
     {
-        TryInitMeter();
-        // Poll at ~30 fps (33ms interval)
+        TryInitMeters();
         _timer = new Timer(_ => Poll(), null, 0, 33);
     }
 
-    private void TryInitMeter()
+    private void TryInitMeters()
     {
         try
         {
@@ -63,38 +58,34 @@ public sealed class AudioMeterService
             var enumeratorObj = Activator.CreateInstance(enumeratorType);
             if (enumeratorObj is not IMMDeviceEnumerator enumerator) return;
 
-            // dataFlow=0 (eRender), role=1 (eMultimedia)
-            enumerator.GetDefaultAudioEndpoint(0, 1, out var device);
-
             var meterIid = new Guid("C02216F6-8C67-4B5B-9D00-D008E73E0064");
-            // dwClsCtx=7 (CLSCTX_ALL)
-            device.Activate(ref meterIid, 7, IntPtr.Zero, out var meterObj);
-
-            _meter = meterObj as IAudioMeterInformation;
+            for (var role = 0; role < 3; role++)
+            {
+                try
+                {
+                    enumerator.GetDefaultAudioEndpoint(0, role, out var device);
+                    device.Activate(ref meterIid, 7, IntPtr.Zero, out var obj);
+                    _meters[role] = obj as IAudioMeterInformation;
+                }
+                catch { }
+            }
         }
-        catch
-        {
-            _meter = null;
-        }
+        catch { }
     }
 
     private void Poll()
     {
-        if (_meter is null)
+        var peak = 0f;
+        for (var i = 0; i < _meters.Length; i++)
         {
-            PeakChanged?.Invoke(this, 0f);
-            return;
+            if (_meters[i] is null) continue;
+            try
+            {
+                _meters[i]!.GetPeak(out var p);
+                if (p > peak) peak = p;
+            }
+            catch { _meters[i] = null; }
         }
-
-        try
-        {
-            _meter.GetPeak(out var peak);
-            PeakChanged?.Invoke(this, peak);
-        }
-        catch
-        {
-            _meter = null;
-            PeakChanged?.Invoke(this, 0f);
-        }
+        PeakChanged?.Invoke(this, peak);
     }
 }

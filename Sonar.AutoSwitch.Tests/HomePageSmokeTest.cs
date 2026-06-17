@@ -26,11 +26,11 @@ public class HomePageSmokeTest
         Assert.True(expanders.Count > 0, "No Expanders found — accordion not rendered");
         Assert.True(expanders.All(e => !e.IsExpanded), "Profiles should all be collapsed on load");
 
-        // Regression: Header is a Grid containing a StackPanel; first TextBlock in the StackPanel must show the profile name.
+        // Regression: Header is a Grid; Col 1 is an inner Grid containing the name TextBlock.
         var headerGrid = expanders[0].Header as Grid;
         Assert.NotNull(headerGrid);
-        var namePanel = headerGrid!.Children.OfType<StackPanel>().First();
-        var nameText = namePanel.Children.OfType<TextBlock>().First();
+        var nameGrid = headerGrid!.Children.OfType<Grid>().First();
+        var nameText = nameGrid.Children.OfType<TextBlock>().First();
         Assert.False(string.IsNullOrWhiteSpace(nameText.Text), "Profile header text is empty — binding broken");
     }
 
@@ -279,6 +279,26 @@ public class HomePageSmokeTest
             .FirstOrDefault(e => e.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)?.ToString() == "Active profile dot"
                                  && e.IsVisible);
         Assert.NotNull(dot);
+    }
+
+    [AvaloniaFact]
+    public void Window_title_uses_middle_dot_not_em_dash()
+    {
+        var window = new Window { Width = 600, Height = 500 };
+        var home = new Home();
+        var vm = new HomeViewModel();
+        home.DataContext = vm;
+        window.Content = home;
+        window.Show();
+        window.UpdateLayout();
+
+        // Trigger a title sync by setting an active profile
+        vm.ActiveProfile = new Sonar.AutoSwitch.Services.SonarGamingConfiguration("id-1", "Cyberpunk 2077");
+        window.UpdateLayout();
+
+        Assert.Contains("Cyberpunk 2077", window.Title ?? "");
+        Assert.DoesNotContain("—", window.Title ?? ""); // no em dash
+        Assert.Contains("·", window.Title ?? "");       // middle dot present
     }
 
     [AvaloniaFact]
