@@ -26,10 +26,11 @@ public class HomePageSmokeTest
         Assert.True(expanders.Count > 0, "No Expanders found — accordion not rendered");
         Assert.True(expanders.All(e => !e.IsExpanded), "Profiles should all be collapsed on load");
 
-        // Regression: Header is a StackPanel; first TextBlock must show the profile name.
-        var headerPanel = expanders[0].Header as StackPanel;
-        Assert.NotNull(headerPanel);
-        var nameText = headerPanel!.Children.OfType<TextBlock>().First();
+        // Regression: Header is a Grid containing a StackPanel; first TextBlock in the StackPanel must show the profile name.
+        var headerGrid = expanders[0].Header as Grid;
+        Assert.NotNull(headerGrid);
+        var namePanel = headerGrid!.Children.OfType<StackPanel>().First();
+        var nameText = namePanel.Children.OfType<TextBlock>().First();
         Assert.False(string.IsNullOrWhiteSpace(nameText.Text), "Profile header text is empty — binding broken");
     }
 
@@ -49,7 +50,7 @@ public class HomePageSmokeTest
     }
 
     [AvaloniaFact]
-    public void Home_has_search_toggle()
+    public void Home_has_no_search_toggle()
     {
         var window = new Window { Width = 600, Height = 500 };
         var home = new Home();
@@ -58,9 +59,10 @@ public class HomePageSmokeTest
         window.Show();
         window.UpdateLayout();
 
+        // The toggle-based search has been replaced by a persistent search box.
         var btn = home.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ToggleButton>()
             .FirstOrDefault(b => b.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)?.ToString() == "Toggle search");
-        Assert.NotNull(btn);
+        Assert.Null(btn);
     }
 
     [AvaloniaFact]
@@ -174,5 +176,125 @@ public class HomePageSmokeTest
         // Headless mode: popup windows don't render, so IsDropDownOpen stays false.
         // Assert text input reached the control instead.
         Assert.Equal("e", autoComplete.Text);
+    }
+
+    [AvaloniaFact]
+    public void Profile_match_hint_is_rendered_as_badge_border()
+    {
+        var window = new Window { Width = 600, Height = 500 };
+        var home = new Home();
+        home.DataContext = new HomeViewModel();
+        window.Content = home;
+        window.Show();
+        window.UpdateLayout();
+
+        var expanders = home.GetVisualDescendants().OfType<Expander>().ToList();
+        Assert.True(expanders.Count > 0, "No Expanders found");
+        expanders[0].IsExpanded = true;
+        window.UpdateLayout();
+
+        // The auto-match hint must be a Badge-style Border, not a plain TextBlock.
+        var badge = home.GetVisualDescendants().OfType<Border>()
+            .FirstOrDefault(b => b.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)
+                                  ?.ToString() == "Auto-match hint");
+        Assert.NotNull(badge);
+    }
+
+    // ── New tests for visual beautification (write-first / TDD) ──────────────
+
+    [AvaloniaFact]
+    public void Hero_shows_active_config_name()
+    {
+        var window = new Window { Width = 600, Height = 500 };
+        var home = new Home();
+        home.DataContext = new HomeViewModel();
+        window.Content = home;
+        window.Show();
+        window.UpdateLayout();
+
+        var heroBorder = home.GetVisualDescendants().OfType<Border>()
+            .FirstOrDefault(b => b.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)?.ToString() == "Hero section");
+        Assert.NotNull(heroBorder);
+
+        var activeConfigText = home.GetVisualDescendants().OfType<TextBlock>()
+            .FirstOrDefault(t => t.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)?.ToString() == "Active config name");
+        Assert.NotNull(activeConfigText);
+    }
+
+    [AvaloniaFact]
+    public void Profile_header_shows_preset_badge_when_configured()
+    {
+        var window = new Window { Width = 600, Height = 500 };
+        var home = new Home();
+        var vm = new HomeViewModel();
+        home.DataContext = vm;
+        window.Content = home;
+        window.Show();
+        window.UpdateLayout();
+
+        // Default profile has null SonarGamingConfiguration Id — badge should NOT appear.
+        var expanders = home.GetVisualDescendants().OfType<Expander>().ToList();
+        Assert.True(expanders.Count > 0, "No Expanders found");
+        expanders[0].IsExpanded = true;
+        window.UpdateLayout();
+
+        var badge = home.GetVisualDescendants().OfType<Border>()
+            .FirstOrDefault(b => b.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)?.ToString() == "Sonar config badge");
+        // Either badge is null OR it is not visible (IsVisible=false means the binding hides it).
+        Assert.True(badge == null || !badge.IsVisible, "Badge should not appear for unconfigured profile");
+
+        // Now add a profile with a real SonarGamingConfiguration and check badge appears.
+        var configuredProfile = new Sonar.AutoSwitch.ViewModels.AutoSwitchProfileViewModel();
+        configuredProfile.SonarGamingConfiguration = new Sonar.AutoSwitch.Services.SonarGamingConfiguration("test-id-123", "Test Config");
+        vm.AutoSwitchProfiles.Add(configuredProfile);
+        window.UpdateLayout();
+
+        // Expand the newly added expander (last one).
+        var newExpanders = home.GetVisualDescendants().OfType<Expander>().ToList();
+        newExpanders.Last().IsExpanded = true;
+        window.UpdateLayout();
+
+        var configuredBadge = home.GetVisualDescendants().OfType<Border>()
+            .FirstOrDefault(b => b.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)?.ToString() == "Sonar config badge"
+                                 && b.IsVisible);
+        Assert.NotNull(configuredBadge);
+    }
+
+    [AvaloniaFact]
+    public void Profile_header_shows_active_dot_when_active()
+    {
+        var window = new Window { Width = 600, Height = 500 };
+        var home = new Home();
+        var vm = new HomeViewModel();
+        home.DataContext = vm;
+        window.Content = home;
+        window.Show();
+        window.UpdateLayout();
+
+        // Mark the first profile as active.
+        vm.AutoSwitchProfiles[0].IsActive = true;
+        window.UpdateLayout();
+
+        var dot = home.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Ellipse>()
+            .FirstOrDefault(e => e.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)?.ToString() == "Active profile dot"
+                                 && e.IsVisible);
+        Assert.NotNull(dot);
+    }
+
+    [AvaloniaFact]
+    public void Home_has_persistent_search_box()
+    {
+        var window = new Window { Width = 600, Height = 500 };
+        var home = new Home();
+        home.DataContext = new HomeViewModel();
+        window.Content = home;
+        window.Show();
+        window.UpdateLayout();
+
+        // Search box must be present and visible without any toggle click.
+        var searchBox = home.GetVisualDescendants().OfType<TextBox>()
+            .FirstOrDefault(t => t.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)?.ToString() == "Search profiles");
+        Assert.NotNull(searchBox);
+        Assert.True(searchBox!.IsVisible, "Search box should be visible without toggling");
     }
 }

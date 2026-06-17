@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Sonar.AutoSwitch.Services;
 
 namespace Sonar.AutoSwitch.ViewModels;
@@ -23,6 +24,8 @@ public class HomeViewModel : ViewModelBase
     // Search + sort: ephemeral view state, not persisted to JSON.
     private string _searchText = string.Empty;
     private int _sortDirection; // 0 = manual order, 1 = A→Z, -1 = Z→A
+    // Audio peak — ephemeral, drives EQ bar heights.
+    private double _audioPeak;
 
     public static IReadOnlyList<string> ProcessNames { get; } =
         Process.GetProcesses()
@@ -48,6 +51,21 @@ public class HomeViewModel : ViewModelBase
         foreach (var p in _autoSwitchProfiles)
             Subscribe(p);
         _autoSwitchProfiles.CollectionChanged += AutoSwitchProfilesOnCollectionChanged;
+        AudioMeterService.Instance.PeakChanged += OnAudioPeak;
+    }
+
+    private void OnAudioPeak(object? sender, float peak)
+    {
+        _audioPeak = (double)peak;
+        Dispatcher.UIThread.Post(() =>
+        {
+            base.OnPropertyChanged(nameof(EqBar1));
+            base.OnPropertyChanged(nameof(EqBar2));
+            base.OnPropertyChanged(nameof(EqBar3));
+            base.OnPropertyChanged(nameof(EqBar4));
+            base.OnPropertyChanged(nameof(EqBar5));
+            base.OnPropertyChanged(nameof(EqBar6));
+        });
     }
 
     public SonarGamingConfiguration DefaultSonarGamingConfiguration
@@ -90,6 +108,10 @@ public class HomeViewModel : ViewModelBase
         {
             if (Equals(value, _activeProfile)) return;
             _activeProfile = value;
+            // Update IsActive on all profiles to reflect the newly active config.
+            foreach (var p in _autoSwitchProfiles)
+                p.IsActive = p.SonarGamingConfiguration.Id != null
+                             && p.SonarGamingConfiguration.Id == value?.Id;
             OnPropertyChanged();
         }
     }
@@ -107,6 +129,7 @@ public class HomeViewModel : ViewModelBase
             base.OnPropertyChanged(nameof(SonarStatus));
             base.OnPropertyChanged(nameof(SonarStatusBrush));
             base.OnPropertyChanged(nameof(SonarStatusTooltip));
+            base.OnPropertyChanged(nameof(SonarStatusLabel));
         }
     }
 
@@ -125,6 +148,22 @@ public class HomeViewModel : ViewModelBase
         SonarConnectionStatus.Disconnected => "Sonar not reachable — is SteelSeries GG running?",
         _ => "Waiting for the first profile switch",
     };
+
+    [JsonIgnore]
+    public string SonarStatusLabel => _sonarStatus switch
+    {
+        SonarConnectionStatus.Connected => "Sonar connected",
+        SonarConnectionStatus.Disconnected => "Not reachable",
+        _ => "Waiting...",
+    };
+
+    // EQ bar heights — driven by AudioMeterService peak, ephemeral, never persisted.
+    [JsonIgnore] public double EqBar1 => Math.Max(4.0, _audioPeak * 28.0 * 0.60);
+    [JsonIgnore] public double EqBar2 => Math.Max(4.0, _audioPeak * 28.0 * 0.85);
+    [JsonIgnore] public double EqBar3 => Math.Max(4.0, _audioPeak * 28.0 * 1.00);
+    [JsonIgnore] public double EqBar4 => Math.Max(4.0, _audioPeak * 28.0 * 0.90);
+    [JsonIgnore] public double EqBar5 => Math.Max(4.0, _audioPeak * 28.0 * 0.72);
+    [JsonIgnore] public double EqBar6 => Math.Max(4.0, _audioPeak * 28.0 * 0.48);
 
     [JsonIgnore]
     public string SearchText
@@ -274,7 +313,10 @@ public class HomeViewModel : ViewModelBase
         if (propertyName is nameof(FilteredProfiles)
                          or nameof(SortModeLabel)
                          or nameof(SortModeTooltip)
-                         or nameof(ActiveProfile))
+                         or nameof(ActiveProfile)
+                         or nameof(SonarStatusLabel)
+                         or nameof(EqBar1) or nameof(EqBar2) or nameof(EqBar3)
+                         or nameof(EqBar4) or nameof(EqBar5) or nameof(EqBar6))
             return;
         StateManager.Instance.SaveState<HomeViewModel>();
     }

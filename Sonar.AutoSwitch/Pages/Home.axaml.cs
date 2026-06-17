@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
@@ -15,18 +14,12 @@ namespace Sonar.AutoSwitch.Pages;
 
 public partial class Home : UserControl
 {
-    private readonly StackPanel _activeConfigPanel;
-    private readonly TextBox _searchBox;
-    private readonly ToggleButton _searchToggle;
     private HomeViewModel? _hookedVm;
 
     public Home()
     {
         InitializeComponent();
         DataContext = HomeViewModel.LoadHomeViewModel();
-        _activeConfigPanel = this.FindControl<StackPanel>("ActiveConfigPanel")!;
-        _searchBox = this.FindControl<TextBox>("SearchBox")!;
-        _searchToggle = this.FindControl<ToggleButton>("SearchToggle")!;
 
         // Follow the active DataContext so the title tracks switches (and so tests can inject a VM).
         DataContextChanged += (_, _) => HookViewModel();
@@ -64,17 +57,6 @@ public partial class Home : UserControl
 
     private void OpenSettings_Click(object? sender, RoutedEventArgs e) =>
         ((MainWindow)TopLevel.GetTopLevel(this)!).ShowSettings();
-
-    private void SearchToggle_Click(object? sender, RoutedEventArgs e)
-    {
-        var searching = _searchToggle.IsChecked == true;
-        _activeConfigPanel.IsVisible = !searching;
-        _searchBox.IsVisible = searching;
-        if (searching)
-            _searchBox.Focus();
-        else if (DataContext is HomeViewModel vm)
-            vm.SearchText = "";
-    }
 
     private async void BrowseExe_Click(object? sender, RoutedEventArgs e)
     {

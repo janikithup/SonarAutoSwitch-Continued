@@ -17,6 +17,7 @@ public class AutoSwitchProfileViewModel : ViewModelBase
     private bool _isExpanded;
     private bool _isConfirmingDelete;
     private bool _isAdvancedExpanded;
+    private bool _isActive;
 
     public string Title
     {
@@ -65,8 +66,24 @@ public class AutoSwitchProfileViewModel : ViewModelBase
             SonarMatchHint = "";
             OnPropertyChanged(nameof(SonarGamingConfiguration));
             OnPropertyChanged(nameof(IsIncomplete));
+            OnPropertyChanged(nameof(HasSonarConfig));
         }
     }
+
+    [JsonIgnore]
+    public bool IsActive
+    {
+        get => _isActive;
+        set
+        {
+            if (value == _isActive) return;
+            _isActive = value;
+            base.OnPropertyChanged(nameof(IsActive));
+        }
+    }
+
+    [JsonIgnore]
+    public bool HasSonarConfig => _sonarGamingConfiguration.Id is not null;
 
     public DateTime? CreatedAt { get; set; }
 
@@ -172,7 +189,8 @@ public class AutoSwitchProfileViewModel : ViewModelBase
         if (propertyName is nameof(IsExpanded) or nameof(IsConfirmingDelete) or nameof(SelectedRecentWindow)
                          or nameof(ExeRunningHint) or nameof(HasExeRunningHint)
                          or nameof(SonarMatchHint) or nameof(HasSonarMatchHint)
-                         or nameof(IsAdvancedExpanded) or nameof(IsIncomplete)) return;
+                         or nameof(IsAdvancedExpanded) or nameof(IsIncomplete)
+                         or nameof(IsActive) or nameof(HasSonarConfig)) return;
         StateManager.Instance.SaveState<HomeViewModel>();
     }
 
