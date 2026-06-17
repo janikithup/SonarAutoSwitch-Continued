@@ -19,7 +19,7 @@ internal static class DemoData
         new("demo-cs2",        "Counter-Strike 2"),
         new("demo-elden",      "Elden Ring"),
         new("demo-bg3",        "Baldur's Gate 3"),
-        new("demo-competitive","Competitive"),
+        new("demo-music",      "Music"),
         new("demo-cinematic",  "Cinematic"),
     };
 
@@ -54,7 +54,7 @@ internal static class DemoData
         {
             IsDemo = true,
             AutoSwitchProfiles = profiles,
-            DefaultSonarGamingConfiguration = Configs[4], // "Competitive"
+            DefaultSonarGamingConfiguration = Configs[4], // "Music"
             ActiveProfile = Configs[0],                    // "Cyberpunk 2077"
             SonarStatus = SonarConnectionStatus.Connected, // green dot
         };
