@@ -313,6 +313,12 @@
                                               FontSize="11"
                                               Margin="0,2,0,0"
                                               AutomationProperties.Name="Match mode OR" />
+                                    <CheckBox IsChecked="{Binding KeepWhileRunning}"
+                                              IsEnabled="{Binding HasExeName}"
+                                              Content="Keep while game is running"
+                                              FontSize="11"
+                                              Margin="0,2,0,0"
+                                              AutomationProperties.Name="Keep while running" />
                                 </StackPanel>
                             </Expander>
 

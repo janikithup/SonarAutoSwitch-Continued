@@ -15,6 +15,7 @@ public class AutoSwitchService
     private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
     private SonarGamingConfiguration _selectedGamingConfiguration;
     private CancellationTokenSource _cancellationTokenSource;
+    private AutoSwitchProfileViewModel? _lockedProfile;
 
     public AutoSwitchService()
     {
@@ -35,6 +36,7 @@ public class AutoSwitchService
         {
             Win32WindowEventManager.Instance.UnsubscribeToWindowsEvents();
             _selectedGamingConfiguration = default!;
+            _lockedProfile = null;
             _homeViewModel.SonarStatus = SonarConnectionStatus.Idle;
         }
     }
@@ -64,6 +66,19 @@ public class AutoSwitchService
         canceled ? null
         : switched ? SonarConnectionStatus.Connected
         : SonarConnectionStatus.Disconnected;
+
+    // Exposed internal for unit testing — pass a fake isRunning to avoid real Process calls in tests.
+    internal static bool ShouldKeepLocked(AutoSwitchProfileViewModel? locked, Func<string, bool>? isRunning = null)
+    {
+        if (locked?.KeepWhileRunning != true || string.IsNullOrEmpty(locked.ExeName)) return false;
+        isRunning ??= name =>
+        {
+            var procs = Process.GetProcessesByName(name);
+            foreach (var p in procs) p.Dispose();
+            return procs.Length > 0;
+        };
+        return isRunning(locked.ExeName);
+    }
 
     public static bool ProfileMatches(AutoSwitchProfileViewModel p, string? exeName, string title)
     {
@@ -107,6 +122,15 @@ public class AutoSwitchService
 
                 AutoSwitchProfileViewModel? autoSwitchProfileViewModel =
                     autoSwitchProfileViewModels.FirstOrDefault(p => AutoSwitchService.ProfileMatches(p, windowExeName, e.Title));
+
+                if (autoSwitchProfileViewModel is not null)
+                    _lockedProfile = autoSwitchProfileViewModel;
+                else if (ShouldKeepLocked(_lockedProfile))
+                {
+                    Log($"KeepWhileRunning: {_lockedProfile!.ExeName} still running, holding {_lockedProfile.SonarGamingConfiguration.Name}");
+                    autoSwitchProfileViewModel = _lockedProfile;
+                }
+
                 SonarGamingConfiguration? sonarGamingConfiguration = autoSwitchProfileViewModel?.SonarGamingConfiguration;
                 sonarGamingConfiguration ??= _homeViewModel.DefaultSonarGamingConfiguration;
                 Log($"Matched: {autoSwitchProfileViewModel?.Title ?? "(none→default)"} → {sonarGamingConfiguration?.Name} [{sw.ElapsedMilliseconds}ms]");

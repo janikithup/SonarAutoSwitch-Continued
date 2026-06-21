@@ -19,6 +19,7 @@ public class AutoSwitchProfileViewModel : ViewModelBase
     private bool _isAdvancedExpanded;
     private bool _isActive;
     private bool _titleMatchOr;
+    private bool _keepWhileRunning;
 
     public string Title
     {
@@ -52,6 +53,7 @@ public class AutoSwitchProfileViewModel : ViewModelBase
             OnPropertyChanged(nameof(DisplayName));
             OnPropertyChanged(nameof(ExeRunningHint));
             OnPropertyChanged(nameof(HasExeRunningHint));
+            OnPropertyChanged(nameof(HasExeName));
             OnPropertyChanged(nameof(IsIncomplete));
             TryAutoMatchSonarConfig();
         }
@@ -78,6 +80,17 @@ public class AutoSwitchProfileViewModel : ViewModelBase
         {
             if (value == _titleMatchOr) return;
             _titleMatchOr = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool KeepWhileRunning
+    {
+        get => _keepWhileRunning;
+        set
+        {
+            if (value == _keepWhileRunning) return;
+            _keepWhileRunning = value;
             OnPropertyChanged();
         }
     }
@@ -162,6 +175,7 @@ public class AutoSwitchProfileViewModel : ViewModelBase
             ? "Running ✓" : "";
 
     [JsonIgnore] public bool HasExeRunningHint => ExeRunningHint.Length > 0;
+    [JsonIgnore] public bool HasExeName => !string.IsNullOrEmpty(_exeName);
 
     [JsonIgnore]
     public string SonarMatchHint
@@ -202,7 +216,7 @@ public class AutoSwitchProfileViewModel : ViewModelBase
     {
         base.OnPropertyChanged(propertyName);
         if (propertyName is nameof(IsExpanded) or nameof(IsConfirmingDelete) or nameof(SelectedRecentWindow)
-                         or nameof(ExeRunningHint) or nameof(HasExeRunningHint)
+                         or nameof(ExeRunningHint) or nameof(HasExeRunningHint) or nameof(HasExeName)
                          or nameof(SonarMatchHint) or nameof(HasSonarMatchHint)
                          or nameof(IsAdvancedExpanded) or nameof(IsIncomplete)
                          or nameof(IsActive) or nameof(HasSonarConfig)) return;
