@@ -108,10 +108,13 @@ public class AutoSwitchService
             string? windowExeName = e.ExeName;
             Log($"ForegroundChanged: exe={windowExeName} title={e.Title}");
 
-            if (string.Equals(windowExeName, "explorer", StringComparison.OrdinalIgnoreCase))
-                return;
-
-            RecentWindowsService.AddWindow(windowExeName, e.Title, e.ExePath);
+            // Explorer (desktop, taskbar, shell) is never a game but can be the foreground window
+            // at startup. Do NOT early-return here — let the proactive scan run so a game that was
+            // already running when the app started gets detected. Guard only against adding explorer
+            // to recent windows and against reverting to default (handled after the scan below).
+            bool isExplorer = string.Equals(windowExeName, "explorer", StringComparison.OrdinalIgnoreCase);
+            if (!isExplorer)
+                RecentWindowsService.AddWindow(windowExeName, e.Title, e.ExePath);
 
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource?.Dispose();
@@ -131,6 +134,7 @@ public class AutoSwitchService
                     autoSwitchProfileViewModels.FirstOrDefault(p => AutoSwitchService.ProfileMatches(p, windowExeName, e.Title));
 
                 bool keepWhileRunning = StateManager.Instance.GetOrLoadState<SettingsViewModel>().KeepWhileRunning;
+                bool isSelfWindow = string.Equals(windowExeName, "Sonar.AutoSwitch", StringComparison.OrdinalIgnoreCase);
                 if (autoSwitchProfileViewModel is not null)
                 {
                     _lockedProfile = autoSwitchProfileViewModel;
@@ -154,10 +158,12 @@ public class AutoSwitchService
                         TaskContinuationOptions.OnlyOnRanToCompletion,
                         TaskScheduler.Default);
                 }
-                else if (keepWhileRunning)
+                else if (keepWhileRunning || isSelfWindow)
                 {
                     // Proactive: _lockedProfile was never set (e.g. app started with game already running,
                     // or profile was just re-enabled). Scan all profiles for any whose exe is currently running.
+                    // When our own management UI is in the foreground, always run this scan — opening the
+                    // tray window or toggling IsEnabled should never discard an active game profile.
                     var found = autoSwitchProfileViewModels.FirstOrDefault(p => ShouldKeepLocked(p, true));
                     if (found != null)
                     {
@@ -176,6 +182,9 @@ public class AutoSwitchService
                 }
 
                 SonarGamingConfiguration? sonarGamingConfiguration = autoSwitchProfileViewModel?.SonarGamingConfiguration;
+                // Explorer came to foreground and proactive scan found nothing running — don't revert
+                // to default just because the user clicked the desktop or taskbar.
+                if (sonarGamingConfiguration == null && isExplorer) return;
                 sonarGamingConfiguration ??= _homeViewModel.DefaultSonarGamingConfiguration;
                 Log($"Matched: {autoSwitchProfileViewModel?.Title ?? "(none→default)"} → {sonarGamingConfiguration?.Name} [{sw.ElapsedMilliseconds}ms]");
 
@@ -193,10 +202,10 @@ public class AutoSwitchService
                     string selectedGamingConfigurationId =
                         SteelSeriesSonarService.Instance.GetSelectedGamingConfiguration();
                     Log($"CurrentConfig: {selectedGamingConfigurationId} [{sw.ElapsedMilliseconds}ms]");
-                    _selectedGamingConfiguration = sonarGamingConfiguration;
                     if (sonarGamingConfiguration.Id == selectedGamingConfigurationId)
                     {
                         // DB was readable and we're already on the right config — Sonar is up.
+                        _selectedGamingConfiguration = sonarGamingConfiguration;
                         _homeViewModel.SonarStatus = SonarConnectionStatus.Connected;
                         Log("Already correct, skipping");
                         return;
@@ -204,6 +213,10 @@ public class AutoSwitchService
                     Log($"Switching to {sonarGamingConfiguration.Name}... [{sw.ElapsedMilliseconds}ms]");
                     bool switched = await SteelSeriesSonarService.Instance.ChangeSelectedGamingConfiguration(
                         sonarGamingConfiguration, token);
+                    // Only update the cache on a confirmed switch — a cancelled switch leaves the field
+                    // stale otherwise, causing the next event for the same config to early-return.
+                    if (!token.IsCancellationRequested && switched)
+                        _selectedGamingConfiguration = sonarGamingConfiguration;
                     // A superseded (canceled) switch isn't a failure — leave the dot for the newer switch.
                     if (StatusForSwitch(switched, token.IsCancellationRequested) is { } status)
                         _homeViewModel.SonarStatus = status;

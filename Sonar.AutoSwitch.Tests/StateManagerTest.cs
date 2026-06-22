@@ -114,6 +114,54 @@ public class StateManagerTest
         }
     }
 
+    // Race regression: two threads (UI startup vs. the audio Timer thread firing
+    // AutoSwitchService.Log → AutoSwitchService.Instance → GetOrLoadState) both loaded
+    // HomeViewModel because the cache was written only AFTER construction. The UI bound to
+    // one instance, AutoSwitchService matched against the other → edits never persisted.
+    // Slow ctor widens the window so a non-atomic GetOrLoadState reliably returns >1 instance.
+    private class SlowPayload
+    {
+        public SlowPayload() => System.Threading.Thread.Sleep(20);
+    }
+
+    private static void ClearCache<T>()
+    {
+        var dict = (Dictionary<Type, object?>)typeof(StateManager)
+            .GetField("_states", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .GetValue(StateManager.Instance)!;
+        dict.Remove(typeof(T));
+    }
+
+    [Fact]
+    public void GetOrLoadState_returns_one_shared_instance_under_concurrent_access()
+    {
+        ClearCache<SlowPayload>();
+        try
+        {
+            const int n = 8;
+            var results = new SlowPayload[n];
+            var barrier = new System.Threading.Barrier(n);   // force a simultaneous first call
+            var threads = new System.Threading.Thread[n];     // dedicated threads — don't flood the pool
+            for (int i = 0; i < n; i++)
+            {
+                int idx = i;
+                threads[i] = new System.Threading.Thread(() =>
+                {
+                    barrier.SignalAndWait();
+                    results[idx] = StateManager.Instance.GetOrLoadState<SlowPayload>();
+                });
+            }
+            foreach (var t in threads) t.Start();
+            foreach (var t in threads) t.Join();
+
+            Assert.Equal(1, results.Distinct().Count());
+        }
+        finally
+        {
+            ClearCache<SlowPayload>();
+        }
+    }
+
     [Fact]
     public void CheckStateExists_reflects_file_presence()
     {

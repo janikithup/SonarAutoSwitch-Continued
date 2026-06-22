@@ -31,4 +31,32 @@ public class AutoSwitchServiceKeepWhileRunningTest
     [Fact]
     public void Does_not_keep_when_profile_disabled()
         => Assert.False(AutoSwitchService.ShouldKeepLocked(new AutoSwitchProfileViewModel { ExeName = "SoTGame", IsEnabled = false }, keepWhileRunning: true, _ => true));
+
+    // Proactive scan: profiles.FirstOrDefault(p => ShouldKeepLocked(p, true, isRunning))
+    [Fact]
+    public void Proactive_scan_finds_first_running_profile()
+    {
+        var profiles = new[]
+        {
+            Profile("GameA"),  // not running
+            Profile("GameB"),  // running
+            Profile("GameC"),  // also running but GameB found first
+        };
+        var found = profiles.FirstOrDefault(p => AutoSwitchService.ShouldKeepLocked(p, true, name => name is "GameB" or "GameC"));
+        Assert.NotNull(found);
+        Assert.Equal("GameB", found.ExeName);
+    }
+
+    [Fact]
+    public void Proactive_scan_skips_disabled_profiles()
+    {
+        var profiles = new[]
+        {
+            new AutoSwitchProfileViewModel { ExeName = "GameA", IsEnabled = false },
+            Profile("GameB"),
+        };
+        var found = profiles.FirstOrDefault(p => AutoSwitchService.ShouldKeepLocked(p, true, _ => true));
+        Assert.NotNull(found);
+        Assert.Equal("GameB", found.ExeName);
+    }
 }

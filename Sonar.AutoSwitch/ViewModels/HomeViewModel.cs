@@ -127,7 +127,8 @@ public class HomeViewModel : ViewModelBase
             _activeProfile = value;
             // Update IsActive on all profiles to reflect the newly active config.
             foreach (var p in _autoSwitchProfiles)
-                p.IsActive = p.SonarGamingConfiguration.Id != null
+                p.IsActive = p.IsEnabled
+                             && p.SonarGamingConfiguration.Id != null
                              && p.SonarGamingConfiguration.Id == value?.Id;
             OnPropertyChanged();
         }
@@ -299,7 +300,14 @@ public class HomeViewModel : ViewModelBase
                            or nameof(AutoSwitchProfileViewModel.Title))
             base.OnPropertyChanged(nameof(FilteredProfiles));
         if (e.PropertyName == nameof(AutoSwitchProfileViewModel.IsEnabled))
+        {
+            // Immediately clear the active indicator on disable — don't wait for the async
+            // FireCurrentForeground path, which short-circuits if DefaultSonarGamingConfiguration
+            // equals the profile's config and never reaches the IsActive update.
+            if (sender is AutoSwitchProfileViewModel { IsEnabled: false } disabledProfile)
+                disabledProfile.IsActive = false;
             Services.Win32.Win32WindowEventManager.Instance.FireCurrentForeground();
+        }
     }
 
     protected override void OnPropertyChanged([CallerMemberName] string? propertyName = null)

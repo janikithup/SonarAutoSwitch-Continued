@@ -11,6 +11,10 @@ public class StateManager
     private readonly Dictionary<Type, DelayedDeduplicateAction> _saveActions = new();
     private readonly Dictionary<Type, object?> _states = new();
     private readonly HashSet<Type> _readOnly = new();
+    // Guards _states/_readOnly. GetOrLoadState ran lock-free, so a concurrent load of the same
+    // type (UI startup vs. the audio Timer thread spinning up AutoSwitchService) produced two
+    // instances and could corrupt the dictionary. Monitor is reentrant, so same-thread nesting is fine.
+    private readonly object _lock = new();
 
     private StateManager()
     {
@@ -24,8 +28,11 @@ public class StateManager
     // Used by --demo so the screenshot run never reads or writes the user's real state.
     public void SeedReadOnly<T>(T state)
     {
-        _states[typeof(T)] = state;
-        _readOnly.Add(typeof(T));
+        lock (_lock)
+        {
+            _states[typeof(T)] = state;
+            _readOnly.Add(typeof(T));
+        }
     }
 
     public void SaveState<T>()
@@ -54,16 +61,23 @@ public class StateManager
 
     public T GetOrLoadState<T>() where T : new()
     {
-        if (GetState<T>() is { } existingState)
-            return existingState;
+        lock (_lock)
+        {
+            if (GetState<T>() is { } existingState)
+                return existingState;
 
-        string jsonPath = Path.Combine(_appDataPath, typeof(T).Name + ".json");
+            string jsonPath = Path.Combine(_appDataPath, typeof(T).Name + ".json");
 #pragma warning disable IL2026
-        T? loadState = !File.Exists(jsonPath) ? new T() : JsonSerializer.Deserialize<T>(File.ReadAllText(jsonPath));
+            // Deserialize runs arbitrary property setters while _lock is held. Those setters MUST NOT
+            // touch a static AutoSwitchService member (e.g. AutoSwitchService.Log): doing so triggers
+            // that singleton's type-init, which calls back into GetOrLoadState on another thread →
+            // _lock vs. type-init-lock deadlock. Keep the deserialize path free of AutoSwitchService.
+            T? loadState = !File.Exists(jsonPath) ? new T() : JsonSerializer.Deserialize<T>(File.ReadAllText(jsonPath));
 #pragma warning restore IL2026
-        T state = loadState ?? new T();
-        _states[typeof(T)] = state;
-        return state;
+            T state = loadState ?? new T();
+            _states[typeof(T)] = state;
+            return state;
+        }
     }
 
     public bool CheckStateExists<T>()
@@ -79,8 +93,11 @@ public class StateManager
 
     private T? GetState<T>()
     {
-        if (_states.TryGetValue(typeof(T), out object? existing) && existing is T existingState)
-            return existingState;
-        return default;
+        lock (_lock)
+        {
+            if (_states.TryGetValue(typeof(T), out object? existing) && existing is T existingState)
+                return existingState;
+            return default;
+        }
     }
 }
